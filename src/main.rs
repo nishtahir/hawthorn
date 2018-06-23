@@ -19,7 +19,20 @@ mod models;
 mod schema;
 
 use db::DbConn;
-use models::{NewPlayer, Player, NewDeck, Deck, NewParticipant, Participant, ParticipantRequest, NewGame, Game, Retrievable, Insertable};
+use models::{
+    NewPlayer, 
+    Player, 
+    NewDeck, 
+    Deck, 
+    NewParticipant, 
+    Participant, 
+    ParticipantRequest, 
+    NewGame, 
+    Game, 
+    Retrievable, 
+    Insertable
+};
+
 use rocket_contrib::Json;
 
 use diesel::result::Error;
@@ -88,11 +101,27 @@ fn get_games(conn: DbConn) -> Result<Json<Vec<Game>>, Failure> {
         .map_err(|error| error_status(error))
 }
 
+#[get("/<id>")]
+fn get_game(id: i32, conn: DbConn) -> Result<Json, Failure> {
+    match Game::find(id, &conn) {
+        Ok(game) => {
+            match Participant::find_by_game(&game, &conn) {
+                Ok(participant) => {
+                    Ok(Json(json!({ "id": game.id, "time_stamp": game.time_stamp ,"participants": participant })))
+                },
+                Err(error) => Err(error_status(error))
+            }
+        },
+        Err(error) => Err(error_status(error))
+    }
+}
+
 #[post("/", format = "application/json", data = "<data>")]
 fn create_game(data: Json<Vec<ParticipantRequest>>, conn: DbConn) -> Result<Json, Failure> {
     match NewGame::insert(NewGame::new(), &conn) {
         Ok(game) => {
-            let p_list = data.into_inner().into_iter()
+            let p_list = data.into_inner()
+                .into_iter()
                 .map(|p| NewParticipant::new(game.id, p.deck_id, p.win))
                 .collect();
             match NewParticipant::insert(&p_list, &conn) {
@@ -120,6 +149,6 @@ fn main() {
         .mount("/deck", routes![get_deck, create_deck])
         .mount("/decks", routes![get_decks])
         .mount("/games", routes![get_games])
-        .mount("/game", routes![create_game])
+        .mount("/game", routes![get_game, create_game])
         .launch();
 }

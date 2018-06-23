@@ -213,6 +213,12 @@ pub struct ParticipantRequest {
     pub win: bool,
 }
 
+impl Participant {
+    pub fn find_by_game(game: &Game, conn: &SqliteConnection) -> QueryResult<Vec<Participant>> {
+        Participant::belonging_to(game).load::<Participant>(conn)
+    }
+}
+
 impl NewParticipant {
 
     pub fn new (game_id: i32, deck_id: i32, win: bool) -> NewParticipant {
