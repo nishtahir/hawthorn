@@ -3,9 +3,12 @@
 
 extern crate dotenv;
 extern crate rocket;
+extern crate time;
 
 #[macro_use]
 extern crate diesel;
+
+#[macro_use]
 extern crate rocket_contrib;
 
 #[macro_use]
@@ -16,7 +19,7 @@ mod models;
 mod schema;
 
 use db::DbConn;
-use models::{NewPlayer, Player};
+use models::{NewPlayer, Player, NewDeck, Deck, NewParticipant, Participant, ParticipantRequest, NewGame, Game, Retrievable, Insertable};
 use rocket_contrib::Json;
 
 use diesel::result::Error;
@@ -30,23 +33,67 @@ fn index() -> &'static str {
 
 #[get("/")]
 fn get_players(conn: DbConn) -> Result<Json<Vec<Player>>, Failure> {
-    Player::all_players(&conn)
+    Player::all(&conn)
         .map(|players| Json(players))
         .map_err(|error| error_status(error))
 }
 
 #[get("/<id>")]
 fn get_player(id: i32, conn: DbConn) -> Result<Json<Player>, Failure> {
-    Player::find_player(id, &conn)
+    Player::find(id, &conn)
         .map(|player| Json(player))
         .map_err(|error| error_status(error))
 }
 
 #[post("/", format = "application/json", data = "<new_player>")]
 fn create_player(new_player: Json<NewPlayer>, conn: DbConn) -> Result<Json<Player>, Failure> {
-    Player::insert_player(new_player.into_inner(), &conn)
+    NewPlayer::insert(new_player.into_inner(), &conn)
         .map(|player| Json(player))
         .map_err(|error| error_status(error))
+}
+
+#[get("/")]
+fn get_decks(conn: DbConn) -> Result<Json<Vec<Deck>>, Failure> {
+    Deck::all(&conn)
+        .map(|deck| Json(deck))
+        .map_err(|error| error_status(error))
+}
+
+#[get("/<id>")]
+fn get_deck(id: i32, conn: DbConn) -> Result<Json<Deck>, Failure> {
+    Deck::find(id, &conn)
+        .map(|deck| Json(deck))
+        .map_err(|error| error_status(error))
+}
+
+#[post("/", format = "application/json", data = "<new_deck>")]
+fn create_deck(new_deck: Json<NewDeck>, conn: DbConn) -> Result<Json<Deck>, Failure> {
+    NewDeck::insert(new_deck.into_inner(), &conn)
+        .map(|deck| Json(deck))
+        .map_err(|error| error_status(error))
+}
+
+#[get("/")]
+fn get_games(conn: DbConn) -> Result<Json<Vec<Game>>, Failure> {
+    Game::all(&conn)
+        .map(|game| Json(game))
+        .map_err(|error| error_status(error))
+}
+
+#[post("/", format = "application/json", data = "<data>")]
+fn create_game(data: Json<Vec<ParticipantRequest>>, conn: DbConn) -> Result<Json, Failure> {
+    match NewGame::insert(NewGame::new(), &conn) {
+        Ok(game) => {
+            let p_list = data.into_inner().into_iter()
+                .map(|p| NewParticipant::new(game.id, p.deck_id, p.win))
+                .collect();
+            match NewParticipant::insert(&p_list, &conn) {
+                Ok(participants) => Ok(Json(json!({ "game": game, "participants": participants }))),
+                Err(e) => Err(error_status(e))
+            }
+        }
+        Err(e) => Err(error_status(e))
+    }
 }
 
 fn error_status(error: Error) -> Failure {
@@ -62,5 +109,9 @@ fn main() {
         .mount("/", routes![index])
         .mount("/player", routes![get_player, create_player])
         .mount("/players", routes![get_players])
+        .mount("/deck", routes![get_deck, create_deck])
+        .mount("/decks", routes![get_decks])
+        .mount("/games", routes![get_games])
+        .mount("/game", routes![create_game])
         .launch();
 }
