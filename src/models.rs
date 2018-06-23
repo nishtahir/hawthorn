@@ -74,6 +74,7 @@ impl Insertable for NewPlayer {
 #[derive(Identifiable, Queryable, Serialize, Deserialize, AsChangeset, Associations)]
 #[table_name = "deck"]
 #[belongs_to(Player)]
+#[has_many(Participant)]
 pub struct Deck {
     pub id: i32,
     pub alias: String,
@@ -187,7 +188,8 @@ impl NewGame {
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, Associations)]
 #[table_name = "participant"]
-#[belongs_to(Game, Deck)]
+#[belongs_to(Game)]
+#[belongs_to(Deck)]
 pub struct Participant {
     pub id: i32,
     pub game_id: i32,
@@ -217,6 +219,10 @@ pub struct ParticipantRequest {
 impl Participant {
     pub fn find_by_game(game: &Game, conn: &SqliteConnection) -> QueryResult<Vec<Participant>> {
         Participant::belonging_to(game).load::<Participant>(conn)
+    }
+
+    pub fn find_by_deck(deck: &Deck, conn: &SqliteConnection) -> QueryResult<Vec<Participant>> {
+        Participant::belonging_to(deck).load::<Participant>(conn)
     }
 }
 

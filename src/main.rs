@@ -70,10 +70,21 @@ fn get_decks(conn: DbConn) -> Result<Json<Vec<Deck>>, Failure> {
 }
 
 #[get("/<id>")]
-fn get_deck(id: i32, conn: DbConn) -> Result<Json<Deck>, Failure> {
-    Deck::find(id, &conn)
-        .map(|deck| Json(deck))
-        .map_err(|error| error_status(error))
+fn get_deck(id: i32, conn: DbConn) -> Result<Json, Failure> {
+    match Deck::find(id, &conn) {
+        Ok(deck) => match Participant::find_by_deck(&deck, &conn) {
+            Ok(participants) => Ok(Json(json!({
+                        "id": deck.id,
+                        "alias": deck.alias,
+                        "commander": deck.commander,
+                        "player_id": deck.player_id,
+                        "games": participants.len(),
+                        "wins": participants.iter().filter(|&p| p.win == true).count()
+                    }))),
+            Err(error) => Err(error_status(error)),
+        },
+        Err(error) => Err(error_status(error)),
+    }
 }
 
 #[post("/", format = "application/json", data = "<new_deck>")]
