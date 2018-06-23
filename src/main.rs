@@ -20,17 +20,8 @@ mod schema;
 
 use db::DbConn;
 use models::{
-    NewPlayer, 
-    Player, 
-    NewDeck, 
-    Deck, 
-    NewParticipant, 
-    Participant, 
-    ParticipantRequest, 
-    NewGame, 
-    Game, 
-    Retrievable, 
-    Insertable
+    Deck, Game, Insertable, NewDeck, NewGame, NewParticipant, NewPlayer, Participant,
+    ParticipantRequest, Player, Retrievable,
 };
 
 use rocket_contrib::Json;
@@ -54,15 +45,13 @@ fn get_players(conn: DbConn) -> Result<Json<Vec<Player>>, Failure> {
 #[get("/<id>")]
 fn get_player(id: i32, conn: DbConn) -> Result<Json, Failure> {
     match Player::find(id, &conn) {
-        Ok(player) => {
-            match Deck::find_by_player(&player, &conn) {
-                Ok(decks) => {
-                    Ok(Json(json!({ "id": player.id, "alias": player.alias, "decks": decks })))
-                },
-                Err(error) => Err(error_status(error))
-            }
+        Ok(player) => match Deck::find_by_player(&player, &conn) {
+            Ok(decks) => Ok(Json(
+                json!({ "id": player.id, "alias": player.alias, "decks": decks }),
+            )),
+            Err(error) => Err(error_status(error)),
         },
-        Err(error) => Err(error_status(error))
+        Err(error) => Err(error_status(error)),
     }
 }
 
@@ -104,15 +93,13 @@ fn get_games(conn: DbConn) -> Result<Json<Vec<Game>>, Failure> {
 #[get("/<id>")]
 fn get_game(id: i32, conn: DbConn) -> Result<Json, Failure> {
     match Game::find(id, &conn) {
-        Ok(game) => {
-            match Participant::find_by_game(&game, &conn) {
-                Ok(participant) => {
-                    Ok(Json(json!({ "id": game.id, "time_stamp": game.time_stamp ,"participants": participant })))
-                },
-                Err(error) => Err(error_status(error))
-            }
+        Ok(game) => match Participant::find_by_game(&game, &conn) {
+            Ok(participant) => Ok(Json(
+                json!({ "id": game.id, "time_stamp": game.time_stamp ,"participants": participant }),
+            )),
+            Err(error) => Err(error_status(error)),
         },
-        Err(error) => Err(error_status(error))
+        Err(error) => Err(error_status(error)),
     }
 }
 
@@ -120,16 +107,17 @@ fn get_game(id: i32, conn: DbConn) -> Result<Json, Failure> {
 fn create_game(data: Json<Vec<ParticipantRequest>>, conn: DbConn) -> Result<Json, Failure> {
     match NewGame::insert(NewGame::new(), &conn) {
         Ok(game) => {
-            let p_list = data.into_inner()
+            let p_list = data
+                .into_inner()
                 .into_iter()
                 .map(|p| NewParticipant::new(game.id, p.deck_id, p.win))
                 .collect();
             match NewParticipant::insert(&p_list, &conn) {
                 Ok(participants) => Ok(Json(json!({ "game": game, "participants": participants }))),
-                Err(e) => Err(error_status(e))
+                Err(e) => Err(error_status(e)),
             }
         }
-        Err(e) => Err(error_status(e))
+        Err(e) => Err(error_status(e)),
     }
 }
 

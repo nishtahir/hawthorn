@@ -5,14 +5,20 @@ use std::marker::Sized;
 
 use time;
 
-pub trait Retrievable where Self: Sized {
-    fn all(conn: &SqliteConnection) ->  QueryResult<Vec<Self>>;
-    fn find(id: i32, conn: &SqliteConnection) ->  QueryResult<Self>;
+pub trait Retrievable
+where
+    Self: Sized,
+{
+    fn all(conn: &SqliteConnection) -> QueryResult<Vec<Self>>;
+    fn find(id: i32, conn: &SqliteConnection) -> QueryResult<Self>;
     fn update(player: Self, conn: &SqliteConnection) -> QueryResult<Self>;
     fn delete(id: i32, conn: &SqliteConnection) -> bool;
 }
 
-pub trait Insertable where Self: Sized {
+pub trait Insertable
+where
+    Self: Sized,
+{
     type T: Retrievable;
     fn insert(model: Self, conn: &SqliteConnection) -> QueryResult<Self::T>;
 }
@@ -49,15 +55,14 @@ impl Retrievable for Player {
     }
 
     fn delete(id: i32, conn: &SqliteConnection) -> bool {
-         diesel::delete(player::table.find(id)).execute(conn).is_ok()
+        diesel::delete(player::table.find(id)).execute(conn).is_ok()
     }
 }
 
 impl Insertable for NewPlayer {
-
     type T = Player;
 
-    fn insert (player: NewPlayer, conn: &SqliteConnection) -> QueryResult<Player> {
+    fn insert(player: NewPlayer, conn: &SqliteConnection) -> QueryResult<Player> {
         // Diesel doesn't expose a get result method
         diesel::insert_into(player::table)
             .values(&player)
@@ -107,7 +112,6 @@ impl Retrievable for Deck {
 }
 
 impl Insertable for NewDeck {
-
     type T = Deck;
 
     fn insert(deck: NewDeck, conn: &SqliteConnection) -> QueryResult<Deck> {
@@ -141,7 +145,6 @@ pub struct NewGame {
 }
 
 impl Retrievable for Game {
-
     fn all(conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
         game::table.order(game::id).load::<Game>(conn)
     }
@@ -163,7 +166,6 @@ impl Retrievable for Game {
 }
 
 impl Insertable for NewGame {
-
     type T = Game;
 
     fn insert(game: NewGame, conn: &SqliteConnection) -> QueryResult<Game> {
@@ -177,12 +179,11 @@ impl Insertable for NewGame {
 
 impl NewGame {
     pub fn new() -> NewGame {
-            let timespec = time::get_time();
-            let millis: f64 = timespec.sec as f64 + (timespec.nsec as f64 / 1000.0 / 1000.0 / 1000.0);
-            NewGame { time_stamp: millis }
+        let timespec = time::get_time();
+        let millis: f64 = timespec.sec as f64 + (timespec.nsec as f64 / 1000.0 / 1000.0 / 1000.0);
+        NewGame { time_stamp: millis }
     }
 }
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, Associations)]
 #[table_name = "participant"]
@@ -203,7 +204,7 @@ pub struct NewParticipant {
 }
 
 /*
-* This is what comes in the request. We don't know the 
+* This is what comes in the request. We don't know the
 * Game id yet so we want to turn this into a NewParticipant
 * Before insertion
 */
@@ -220,17 +221,26 @@ impl Participant {
 }
 
 impl NewParticipant {
-
-    pub fn new (game_id: i32, deck_id: i32, win: bool) -> NewParticipant {
-        NewParticipant { deck_id, game_id, win }
+    pub fn new(game_id: i32, deck_id: i32, win: bool) -> NewParticipant {
+        NewParticipant {
+            deck_id,
+            game_id,
+            win,
+        }
     }
 
-    pub fn insert(new_participants: &Vec<NewParticipant>, conn: &SqliteConnection) -> QueryResult<Vec<Participant>> {
+    pub fn insert(
+        new_participants: &Vec<NewParticipant>,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Vec<Participant>> {
         diesel::insert_into(participant::table)
             .values(new_participants)
             .execute(conn)
-            .and_then(|count| participant::table.order(participant::id.desc())
-                                .limit(count as i64)
-                                .get_results::<Participant>(conn))
+            .and_then(|count| {
+                participant::table
+                    .order(participant::id.desc())
+                    .limit(count as i64)
+                    .get_results::<Participant>(conn)
+            })
     }
 }
