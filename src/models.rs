@@ -76,8 +76,6 @@ pub struct Deck {
     pub player_id: i32,
 }
 
-
-
 #[derive(Insertable)]
 #[table_name = "deck"]
 #[derive(Deserialize)]
@@ -118,6 +116,12 @@ impl Insertable for NewDeck {
             .values(&deck)
             .execute(conn)
             .and_then(|_| deck::table.order(deck::id.desc()).first(conn))
+    }
+}
+
+impl Deck {
+    pub fn find_by_player(player: &Player, conn: &SqliteConnection) -> QueryResult<Vec<Deck>> {
+        Deck::belonging_to(player).load::<Deck>(conn)
     }
 }
 
