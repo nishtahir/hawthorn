@@ -1,5 +1,7 @@
 # Hawthorn
 
+[![Build Status](https://travis-ci.org/nishtahir/hawthorn.svg?branch=master)](https://travis-ci.org/nishtahir/hawthorn)
+
 ELO as a service.
 
 ## Development Setup
