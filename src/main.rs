@@ -15,6 +15,7 @@ extern crate rocket_contrib;
 extern crate serde_derive;
 
 mod db;
+mod elo;
 mod models;
 mod schema;
 
