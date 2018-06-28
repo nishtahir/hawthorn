@@ -52,8 +52,17 @@ fn compute_elo(entities: &Vec<RankableEntity>) -> Vec<RankableEntity> {
         for opponent in entities.into_iter() {
             if i.id != opponent.id {
                 let expected = expected_score(i.elo, opponent.elo);
-                let new_elo = elo_rating(i.elo, 40.0, i.outcome, expected) / (win_count as f64);
-                transactions.insert(i.id, new_elo - i.elo);
+                
+                // We both won or lost - call it a draw
+                let outcome = if i.outcome == opponent.outcome {
+                    GameOutcome::DRAW
+                } else {
+                    i.outcome
+                };
+
+                let new_elo = elo_rating(i.elo, 40.0, outcome, expected);
+                let entry = transactions.entry(i.id).or_insert(0.0);
+                *entry += (new_elo - i.elo) / (win_count as f64)
             }
         }
     }
@@ -114,13 +123,33 @@ fn test_tranformed_rating() {
 }
 
 #[test]
-fn test_compute_elo() {
+fn test_compute_elo_with_3_participants_and_1_winner() {
     let test_case = vec![
         RankableEntity::new(1, 1000.0, GameOutcome::WIN),
         RankableEntity::new(2, 1000.0, GameOutcome::LOSE),
         RankableEntity::new(3, 1000.0, GameOutcome::LOSE),
     ];
 
-    let result = elo(&test_case);
+    let result = compute_elo(&test_case);
+
+    assert_eq!(result[0].elo, 1040.0);
+    assert_eq!(result[1].elo, 980.0);
+    assert_eq!(result[2].elo, 980.0);
+}
+
+#[test]
+fn test_compute_elo_with_4_participants_and_2_winners() {
+    let test_case = vec![
+        RankableEntity::new(1, 1000.0, GameOutcome::WIN),
+        RankableEntity::new(2, 1000.0, GameOutcome::LOSE),
+        RankableEntity::new(3, 1000.0, GameOutcome::WIN),
+        RankableEntity::new(4, 1000.0, GameOutcome::LOSE),
+    ];
+
+    let result = compute_elo(&test_case);
+
     assert_eq!(result[0].elo, 1020.0);
+    assert_eq!(result[1].elo, 980.0);
+    assert_eq!(result[2].elo, 1020.0);
+    assert_eq!(result[3].elo, 980.0);
 }
