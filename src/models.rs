@@ -1,6 +1,6 @@
 use diesel;
 use diesel::prelude::*;
-use schema::{deck, game, participant, player};
+use schema::{deck, game, participant, player, ranking};
 use std::marker::Sized;
 
 use time;
@@ -249,4 +249,20 @@ impl NewParticipant {
                     .get_results::<Participant>(conn)
             })
     }
+}
+
+#[derive(Identifiable, Queryable, Associations)]
+#[belongs_to(Deck)]
+#[table_name = "ranking"]
+pub struct Ranking {
+    pub id: i32,
+    pub elo: f64,
+    pub deck_id: i32,
+}
+
+#[derive(Insertable, AsExpression)]
+#[table_name = "ranking"]
+pub struct NewRanking {
+    pub elo: f64,
+    pub deck_id: i32,
 }

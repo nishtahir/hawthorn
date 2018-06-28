@@ -30,4 +30,12 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(deck, game, participant, player,);
+table! {
+    ranking (id) {
+        id -> Integer,
+        deck_id -> Integer,
+        elo -> Double,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(deck, game, participant, player, ranking,);
