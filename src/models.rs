@@ -25,7 +25,6 @@ where
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, AsChangeset, Associations)]
 #[table_name = "player"]
-#[has_many(Deck, Participant)]
 pub struct Player {
     pub id: i32,
     pub alias: String,
@@ -74,7 +73,6 @@ impl Insertable for NewPlayer {
 #[derive(Identifiable, Queryable, Serialize, Deserialize, AsChangeset, Associations)]
 #[table_name = "deck"]
 #[belongs_to(Player)]
-#[has_many(Participant)]
 pub struct Deck {
     pub id: i32,
     pub alias: String,
@@ -132,7 +130,6 @@ impl Deck {
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, Associations, AsChangeset)]
 #[table_name = "game"]
-#[has_many(Participant)]
 pub struct Game {
     pub id: i32,
     pub time_stamp: f64,
