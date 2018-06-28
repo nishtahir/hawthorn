@@ -48,21 +48,23 @@ fn compute_elo(entities: &Vec<RankableEntity>) -> Vec<RankableEntity> {
         .filter(|entity| entity.outcome == GameOutcome::WIN)
         .count();
 
-    for i in entities.into_iter() {
-        for opponent in entities.into_iter() {
-            if i.id != opponent.id {
-                let expected = expected_score(i.elo, opponent.elo);
-                
-                // We both won or lost - call it a draw
-                let outcome = if i.outcome == opponent.outcome {
-                    GameOutcome::DRAW
-                } else {
-                    i.outcome
-                };
+    if win_count > 0 {
+        for i in entities.into_iter() {
+            for opponent in entities.into_iter() {
+                if i.id != opponent.id {
+                    let expected = expected_score(i.elo, opponent.elo);
 
-                let new_elo = elo_rating(i.elo, 40.0, outcome, expected);
-                let entry = transactions.entry(i.id).or_insert(0.0);
-                *entry += (new_elo - i.elo) / (win_count as f64)
+                    // We both won or lost - call it a draw
+                    let outcome = if i.outcome == opponent.outcome {
+                        GameOutcome::DRAW
+                    } else {
+                        i.outcome
+                    };
+
+                    let new_elo = elo_rating(i.elo, 40.0, outcome, expected);
+                    let entry = transactions.entry(i.id).or_insert(0.0);
+                    *entry += (new_elo - i.elo) / (win_count as f64)
+                }
             }
         }
     }
@@ -76,7 +78,11 @@ fn compute_elo(entities: &Vec<RankableEntity>) -> Vec<RankableEntity> {
 }
 
 fn expected_score(r1: f64, r2: f64) -> f64 {
-    r1 / (r1 + r2)
+    if r1 == 0.0 && r2 == 0.0 {
+        0.0
+    } else {
+        r1 / (r1 + r2)
+    }
 }
 
 fn transformed_rating(rating: f64) -> f64 {
@@ -112,7 +118,7 @@ fn test_expected_score() {
         0.7823159427696138
     );
     assert_eq!(expected_score(1000.0, 1000.0), 0.5);
-    assert!(expected_score(0.0, 0.0).is_nan());
+    assert_eq!(expected_score(0.0, 0.0), 0.0);
 }
 
 #[test]
@@ -152,4 +158,38 @@ fn test_compute_elo_with_4_participants_and_2_winners() {
     assert_eq!(result[1].elo, 980.0);
     assert_eq!(result[2].elo, 1020.0);
     assert_eq!(result[3].elo, 980.0);
+}
+
+#[test]
+fn test_compute_elo_with_4_participants_and_4_winners() {
+    let test_case = vec![
+        RankableEntity::new(1, 1000.0, GameOutcome::WIN),
+        RankableEntity::new(2, 1000.0, GameOutcome::WIN),
+        RankableEntity::new(3, 1000.0, GameOutcome::WIN),
+        RankableEntity::new(4, 1000.0, GameOutcome::WIN),
+    ];
+
+    let result = compute_elo(&test_case);
+
+    assert_eq!(result[0].elo, 1000.0);
+    assert_eq!(result[1].elo, 1000.0);
+    assert_eq!(result[2].elo, 1000.0);
+    assert_eq!(result[3].elo, 1000.0);
+}
+
+#[test]
+fn test_compute_elo_with_4_participants_and_0_winners() {
+    let test_case = vec![
+        RankableEntity::new(1, 1000.0, GameOutcome::LOSE),
+        RankableEntity::new(2, 1000.0, GameOutcome::LOSE),
+        RankableEntity::new(3, 1000.0, GameOutcome::LOSE),
+        RankableEntity::new(4, 1000.0, GameOutcome::LOSE),
+    ];
+
+    let result = compute_elo(&test_case);
+
+    assert_eq!(result[0].elo, 1000.0);
+    assert_eq!(result[1].elo, 1000.0);
+    assert_eq!(result[2].elo, 1000.0);
+    assert_eq!(result[3].elo, 1000.0);
 }
