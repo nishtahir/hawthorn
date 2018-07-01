@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-#[derive(PartialEq, Clone, Copy)]
-enum GameOutcome {
+#[derive(PartialEq, Clone, Copy, Serialize)]
+pub enum GameOutcome {
     WIN,
     LOSE,
     DRAW,
@@ -16,15 +16,15 @@ impl GameOutcome {
         }
     }
 }
-
-struct RankableEntity {
-    id: i32,
-    elo: f64,
-    outcome: GameOutcome,
+#[derive(Serialize)]
+pub struct RankableEntity {
+    pub id: i32,
+    pub elo: f64,
+    pub outcome: GameOutcome,
 }
 
 impl RankableEntity {
-    fn new(id: i32, elo: f64, outcome: GameOutcome) -> RankableEntity {
+    pub fn new(id: i32, elo: f64, outcome: GameOutcome) -> RankableEntity {
         RankableEntity {
             id: id,
             elo: elo,
@@ -41,7 +41,7 @@ impl RankableEntity {
     }
 }
 
-fn compute_elo(entities: &Vec<RankableEntity>) -> Vec<RankableEntity> {
+pub fn compute_elo(entities: &Vec<RankableEntity>) -> Vec<RankableEntity> {
     let mut transactions = HashMap::new();
     let win_count = entities
         .into_iter()
@@ -52,7 +52,8 @@ fn compute_elo(entities: &Vec<RankableEntity>) -> Vec<RankableEntity> {
         for i in entities.into_iter() {
             for opponent in entities.into_iter() {
                 if i.id != opponent.id {
-                    let expected = expected_score(i.elo, opponent.elo);
+                    let expected =
+                        expected_score(transformed_rating(i.elo), transformed_rating(opponent.elo));
 
                     // We both won or lost - call it a draw
                     let outcome = if i.outcome == opponent.outcome {

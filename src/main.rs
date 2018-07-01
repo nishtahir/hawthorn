@@ -20,9 +20,10 @@ mod models;
 mod schema;
 
 use db::DbConn;
+
 use models::{
-    Deck, Game, Insertable, NewDeck, NewGame, NewParticipant, NewPlayer, Participant,
-    ParticipantRequest, Player, Retrievable,
+    Deck, Game, Insertable, NewDeck, NewGame, NewParticipant, NewPlayer, NewRanking, Participant,
+    ParticipantRequest, Player, Ranking, Retrievable,
 };
 
 use rocket_contrib::Json;
@@ -117,19 +118,37 @@ fn get_game(id: i32, conn: DbConn) -> Result<Json, Failure> {
 
 #[post("/", format = "application/json", data = "<data>")]
 fn create_game(data: Json<Vec<ParticipantRequest>>, conn: DbConn) -> Result<Json, Failure> {
-    match NewGame::insert(NewGame::new(), &conn) {
-        Ok(game) => {
-            let p_list = data
+    NewGame::insert(NewGame::new(), &conn)
+        .and_then(|game| {
+            let participant_list = data
                 .into_inner()
-                .into_iter()
+                .iter()
                 .map(|p| NewParticipant::new(game.id, p.deck_id, p.win))
+                .collect::<Vec<NewParticipant>>();
+
+            NewParticipant::insert(&participant_list, &conn)
+                .and_then(|list| create_rankings(&list, &conn))
+                .and_then(|rankings| Ok(Json(json!({ "game": game, "participants": rankings }))))
+        })
+        .map_err(|error| error_status(error))
+}
+
+fn create_rankings(data: &Vec<Participant>, conn: &DbConn) -> Result<Vec<Ranking>, Error> {
+    let result = data
+        .into_iter()
+        .map(|p| Ranking::from_participant(&p, conn).map(|r| r.to_rankable_entity(p.win)))
+        .collect();
+
+    match result {
+        Ok(rankings) => {
+            let final_rankings = elo::compute_elo(&rankings)
+                .iter()
+                .map(|e| NewRanking::from_rankable_entity(e))
                 .collect();
-            match NewParticipant::insert(&p_list, &conn) {
-                Ok(participants) => Ok(Json(json!({ "game": game, "participants": participants }))),
-                Err(e) => Err(error_status(e)),
-            }
+
+            NewRanking::insert_all(&final_rankings, &conn)
         }
-        Err(e) => Err(error_status(e)),
+        Err(error) => Err(error),
     }
 }
 
