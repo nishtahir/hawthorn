@@ -38,4 +38,9 @@ table! {
     }
 }
 
+joinable!(deck -> player (player_id));
+joinable!(participant -> deck (deck_id));
+joinable!(participant -> game (game_id));
+joinable!(ranking -> deck (deck_id));
+
 allow_tables_to_appear_in_same_query!(deck, game, participant, player, ranking,);
