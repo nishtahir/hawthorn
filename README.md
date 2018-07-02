@@ -17,4 +17,3 @@ Make sure you have the `rustfmt-preview` component installed.
 ```sh
 $ rustup component add rustfmt-preview
 ```
-

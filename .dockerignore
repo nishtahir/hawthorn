@@ -1,1 +1,8 @@
 target
+*.sqlite
+*.env
+README.md
+LICENSE
+.travis.yml
+diesel_test.toml
+.gitignore

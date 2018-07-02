@@ -1,0 +1,23 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' 
+
+ERROR="${RED}[ERROR]:${NC} "
+PREFIX="${GREEN}[PRECOMMIT]: ${NC}"
+
+printf "\n"
+printf "${PREFIX} Performing checks...\n"
+
+diff=$(cargo fmt -- --check)
+result=$?
+
+if [[ ${result} -ne 0 ]] ; then
+        printf "${ERROR} Oops! There are some code style issues, run 'cargo fmt --all'\n"
+    exit 1
+fi
+
+printf "${PREFIX} All checks passed!\n"
+printf "\n"
+exit 0
