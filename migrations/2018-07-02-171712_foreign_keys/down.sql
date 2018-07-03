@@ -2,7 +2,7 @@
 -- SQLite does not support ALTER TABLE REMOVE CONSTRAINT,
 -- so the tables must redone.
 
--- Remove foreign key to deck
+-- Remove foreign key from deck
 CREATE TABLE deck_new (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   alias TEXT NOT NULL UNIQUE,
@@ -13,7 +13,7 @@ INSERT INTO deck_new SELECT * FROM deck;
 DROP TABLE deck;
 ALTER TABLE deck_new RENAME TO deck;
 
--- Remove foreign key to participant
+-- Remove foreign key from participant
 CREATE TABLE participant_new (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   game_id INTEGER NOT NULL,
@@ -24,7 +24,7 @@ INSERT INTO participant_new SELECT * FROM participant;
 DROP TABLE participant;
 ALTER TABLE participant_new RENAME TO participant;
 
--- Remove foreign key to ranking
+-- Remove foreign key from ranking
 CREATE TABLE ranking_new (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   deck_id INTEGER NOT NULL,
