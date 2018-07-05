@@ -7,7 +7,8 @@ CREATE TABLE deck (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   alias TEXT NOT NULL UNIQUE,
   commander TEXT NOT NULL,
-  player_id INTEGER NOT NULL
+  player_id INTEGER NOT NULL,
+  CONSTRAINT deck_player_fk FOREIGN KEY(player_id) REFERENCES player(id)
 );
 
 CREATE TABLE game (
@@ -19,11 +20,14 @@ CREATE TABLE participant (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   game_id INTEGER NOT NULL,
   deck_id INTEGER NOT NULL,
-  win BOOLEAN NOT NULL DEFAULT 0
+  win BOOLEAN NOT NULL DEFAULT 0,
+  CONSTRAINT participant_game_fk FOREIGN KEY(game_id) REFERENCES game(id),
+  CONSTRAINT participant_deck_fk FOREIGN KEY(deck_id) REFERENCES deck(id)
 );
 
 CREATE TABLE ranking (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   deck_id INTEGER NOT NULL,
-  elo DOUBLE NOT NULL
+  elo DOUBLE NOT NULL,
+  CONSTRAINT ranking_deck_fk FOREIGN KEY(deck_id) REFERENCES deck(id)
 );
