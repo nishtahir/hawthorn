@@ -27,6 +27,8 @@ table! {
     player (id) {
         id -> Integer,
         alias -> Text,
+        email -> Text,
+        password -> Text,
     }
 }
 

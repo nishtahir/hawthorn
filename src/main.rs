@@ -1,6 +1,6 @@
 #![feature(plugin, custom_attribute)]
 #![plugin(rocket_codegen)]
-
+extern crate bcrypt;
 extern crate dotenv;
 extern crate rocket;
 extern crate time;
@@ -20,21 +20,20 @@ mod models;
 mod schema;
 
 use db::DbConn;
-
-use models::{
-    Deck, Game, Insertable, NewDeck, NewGame, NewParticipant, NewPlayer, NewRanking, Participant,
-    ParticipantRequest, Player, Ranking, Retrievable,
-};
-
-use rocket_contrib::Json;
-
 use diesel::result::Error;
+use models::deck::{Deck, NewDeck};
+use models::game::{Game, NewGame};
+use models::participant::{NewParticipant, Participant, ParticipantRequest};
+use models::player::{NewPlayer, Player};
+use models::ranking::{NewRanking, Ranking};
+use models::{Insertable, Retrievable};
 use rocket::http::Status;
 use rocket::response::Failure;
+use rocket_contrib::Json;
 
 #[get("/")]
 fn index() -> &'static str {
-    "Hello World"
+    "Tap to add 3 mana of any color to your mana pool"
 }
 
 #[get("/")]
