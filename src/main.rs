@@ -2,6 +2,7 @@
 #![plugin(rocket_codegen)]
 extern crate bcrypt;
 extern crate dotenv;
+extern crate jsonwebtoken;
 extern crate rocket;
 extern crate time;
 
@@ -14,6 +15,7 @@ extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
 
+mod api;
 mod db;
 mod elo;
 mod models;
@@ -24,7 +26,6 @@ use diesel::result::Error;
 use models::deck::{Deck, NewDeck};
 use models::game::{Game, NewGame};
 use models::participant::{NewParticipant, Participant, ParticipantRequest};
-use models::player::{NewPlayer, Player};
 use models::ranking::{NewRanking, Ranking};
 use models::{Insertable, Retrievable};
 use rocket::http::Status;
@@ -34,33 +35,6 @@ use rocket_contrib::Json;
 #[get("/")]
 fn index() -> &'static str {
     "Tap to add 3 mana of any color to your mana pool"
-}
-
-#[get("/")]
-fn get_players(conn: DbConn) -> Result<Json<Vec<Player>>, Failure> {
-    Player::all(&conn)
-        .map(|players| Json(players))
-        .map_err(|error| error_status(error))
-}
-
-#[get("/<id>")]
-fn get_player(id: i32, conn: DbConn) -> Result<Json, Failure> {
-    match Player::find(id, &conn) {
-        Ok(player) => match Deck::find_by_player(&player, &conn) {
-            Ok(decks) => Ok(Json(
-                json!({ "id": player.id, "alias": player.alias, "decks": decks }),
-            )),
-            Err(error) => Err(error_status(error)),
-        },
-        Err(error) => Err(error_status(error)),
-    }
-}
-
-#[post("/", format = "application/json", data = "<new_player>")]
-fn create_player(new_player: Json<NewPlayer>, conn: DbConn) -> Result<Json<Player>, Failure> {
-    NewPlayer::insert(new_player.into_inner(), &conn)
-        .map(|player| Json(player))
-        .map_err(|error| error_status(error))
 }
 
 #[get("/")]
@@ -162,8 +136,12 @@ fn main() {
     rocket::ignite()
         .manage(db::init_pool())
         .mount("/", routes![index])
-        .mount("/player", routes![get_player, create_player])
-        .mount("/players", routes![get_players])
+        .mount("/login", routes![api::login::login])
+        .mount(
+            "/player",
+            routes![api::player::get_player, api::player::create_player],
+        )
+        .mount("/players", routes![api::player::get_players])
         .mount("/deck", routes![get_deck, create_deck])
         .mount("/decks", routes![get_decks])
         .mount("/games", routes![get_games])

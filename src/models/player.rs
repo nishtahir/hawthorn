@@ -42,6 +42,15 @@ impl Retrievable for Player {
     }
 }
 
+impl Player {
+    pub fn find_by_email(email: &String, conn: &SqliteConnection) -> QueryResult<Player> {
+        player::table
+            .order(player::email)
+            .filter(player::email.eq(email))
+            .first(conn)
+    }
+}
+
 impl Insertable for NewPlayer {
     type T = Player;
 
