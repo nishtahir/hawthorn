@@ -8,8 +8,6 @@ use std::convert::From;
 #[derive(Debug)]
 pub enum ApiError {
     NotFound,
-    Unauthorized,
-    BadRequest,
     InternalServerError,
 }
 
@@ -34,8 +32,6 @@ impl<'r> Responder<'r> for ApiError {
     fn respond_to(self, _: &Request) -> Result<Response<'r>, Status> {
         match self {
             ApiError::NotFound => Err(Status::NotFound),
-            ApiError::Unauthorized => Err(Status::Unauthorized),
-            ApiError::BadRequest => Err(Status::BadRequest),
             _ => Err(Status::InternalServerError),
         }
     }

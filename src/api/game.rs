@@ -1,12 +1,10 @@
 use api::auth::ApiToken;
+use api::elo::Elo;
 use api::error::ApiError;
 use db::DbConn;
-use diesel::result::Error;
-use elo;
 use models::game::{Game, NewGame};
 use models::participant::{NewParticipant, Participant};
 
-use models::ranking::{NewRanking, Ranking};
 use models::{Insertable, Retrievable};
 use rocket_contrib::Json;
 
@@ -61,7 +59,7 @@ fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameDetailRe
         .into_iter()
         .map(|p| ParticipantResponse {
             deck_id: p.deck_id,
-            elo: -1.0, // we need to associate games or participants with rankings
+            elo: p.elo,
         })
         .collect();
 
@@ -86,11 +84,24 @@ fn create_game(
     let new_participants = game_request
         .participants
         .into_iter()
-        .map(|p| NewParticipant::new(new_game.id, p.deck_id, p.win))
-        .collect::<Vec<NewParticipant>>();
+        .map(|x| {
+            let last_elo: f64 = Participant::find_latest_participant_by_deck_id(x.deck_id, &conn)
+                .map(|p| p.elo)
+                .unwrap_or(1000.0);
 
-    let rankings = NewParticipant::insert(&new_participants, &conn)
-        .and_then(|list| create_rankings(&list, &conn))?
+            NewParticipant {
+                game_id: new_game.id,
+                deck_id: x.deck_id,
+                win: x.win,
+                elo: last_elo,
+            }
+        })
+        .collect();
+
+    let updated = NewParticipant::compute_elo(&new_participants);
+    let participants = NewParticipant::insert(&updated, &conn)?;
+
+    let rankings = participants
         .into_iter()
         .map(|ranking| ParticipantResponse {
             deck_id: ranking.deck_id,
@@ -105,23 +116,4 @@ fn create_game(
     };
 
     Ok(Json(response))
-}
-
-fn create_rankings(data: &Vec<Participant>, conn: &DbConn) -> Result<Vec<Ranking>, Error> {
-    let result = data
-        .into_iter()
-        .map(|p| Ranking::from_participant(&p, conn).map(|r| r.to_rankable_entity(p.win)))
-        .collect();
-
-    match result {
-        Ok(rankings) => {
-            let final_rankings = elo::compute_elo(&rankings)
-                .iter()
-                .map(|e| NewRanking::from_rankable_entity(e))
-                .collect();
-
-            NewRanking::insert_all(&final_rankings, &conn)
-        }
-        Err(error) => Err(error),
-    }
 }

@@ -2,9 +2,10 @@ use diesel;
 use diesel::prelude::*;
 use models::deck::Deck;
 use models::game::Game;
+use models::Retrievable;
 use schema::participant;
 
-#[derive(Identifiable, Queryable, Serialize, Deserialize, Associations)]
+#[derive(Identifiable, Queryable, Serialize, Deserialize, Associations, Debug)]
 #[table_name = "participant"]
 #[belongs_to(Game)]
 #[belongs_to(Deck)]
@@ -13,25 +14,16 @@ pub struct Participant {
     pub game_id: i32,
     pub deck_id: i32,
     pub win: bool,
+    pub elo: f64,
 }
 
 #[derive(Insertable)]
 #[table_name = "participant"]
 pub struct NewParticipant {
-    pub deck_id: i32,
     pub game_id: i32,
-    pub win: bool,
-}
-
-/*
-* This is what comes in the request. We don't know the
-* Game id yet so we want to turn this into a NewParticipant
-* Before insertion
-*/
-#[derive(Deserialize)]
-pub struct ParticipantRequest {
     pub deck_id: i32,
     pub win: bool,
+    pub elo: f64,
 }
 
 impl Participant {
@@ -40,16 +32,29 @@ impl Participant {
     }
 
     pub fn find_by_deck(deck: &Deck, conn: &SqliteConnection) -> QueryResult<Vec<Participant>> {
-        Participant::belonging_to(deck).load::<Participant>(conn)
+        Participant::belonging_to(deck)
+            .order(participant::id.desc())
+            .load::<Participant>(conn)
+    }
+
+    pub fn find_latest_participant_by_deck_id(
+        deck_id: i32,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Participant> {
+        let deck = Deck::find(deck_id, conn)?;
+        Participant::belonging_to(&deck)
+            .order(participant::id.desc())
+            .first(conn)
     }
 }
 
 impl NewParticipant {
-    pub fn new(game_id: i32, deck_id: i32, win: bool) -> NewParticipant {
+    pub fn new(game_id: i32, deck_id: i32, win: bool, elo: f64) -> NewParticipant {
         NewParticipant {
             deck_id,
             game_id,
             win,
+            elo,
         }
     }
 

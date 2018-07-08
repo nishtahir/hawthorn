@@ -3,7 +3,6 @@ use api::error::ApiError;
 use db::DbConn;
 use models::deck::{Deck, NewDeck};
 use models::participant::Participant;
-use models::ranking::Ranking;
 use models::{Insertable, Retrievable};
 use rocket_contrib::Json;
 
@@ -49,7 +48,7 @@ fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, 
 fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckDetailResponse>, ApiError> {
     let deck = Deck::find(id, &conn)?;
     let participations = Participant::find_by_deck(&deck, &conn)?;
-    let latest_ranking = Ranking::get_latest_ranking_by_deck(&deck, &conn)?;
+    println!("{:?}", participations);
 
     let response = DeckDetailResponse {
         id: deck.id,
@@ -57,7 +56,7 @@ fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckDetailRe
         commander: deck.commander,
         games: participations.len() as i32,
         wins: participations.iter().filter(|&p| p.win == true).count() as i32,
-        elo: latest_ranking.elo,
+        elo: participations.first().map_or(900.0, |p| p.elo),
     };
 
     Ok(Json(response))

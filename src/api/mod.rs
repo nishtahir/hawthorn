@@ -4,4 +4,5 @@ pub mod game;
 pub mod login;
 pub mod player;
 
+mod elo;
 mod error;
