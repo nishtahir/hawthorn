@@ -24,7 +24,6 @@ pub struct LoginResponse {
 pub fn login(req: Json<LoginRequest>, conn: DbConn) -> Result<Json<LoginResponse>, Failure> {
     dotenv().ok();
     let secret = env::var("AUTH_SECRET").expect("AUTH_SECRET must be set");
-
     let login_req = req.into_inner();
     match Player::find_by_email(&login_req.email, &conn) {
         Ok(player) => match verify(&login_req.password, &player.password) {

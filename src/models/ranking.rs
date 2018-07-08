@@ -54,7 +54,10 @@ impl Ranking {
             .and_then(|deck| Ranking::get_latest_ranking_by_deck(&deck, conn))
     }
 
-    fn get_latest_ranking_by_deck(deck: &Deck, conn: &SqliteConnection) -> QueryResult<Ranking> {
+    pub fn get_latest_ranking_by_deck(
+        deck: &Deck,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Ranking> {
         let ranking = Ranking::belonging_to(deck)
             .order(ranking::id.desc())
             .first(conn);
