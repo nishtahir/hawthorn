@@ -3,4 +3,4 @@
 **/*.rs.bk
 
 # Database
-diesel_test.sqlite
+*.sqlite
