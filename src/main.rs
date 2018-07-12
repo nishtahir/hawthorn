@@ -10,21 +10,17 @@ extern crate time;
 extern crate diesel;
 #[macro_use]
 extern crate serde_derive;
+extern crate rand;
 
 mod api;
 mod db;
 mod models;
 mod schema;
 
-#[get("/")]
-fn index() -> &'static str {
-    "Tap to add 3 mana of any color to your mana pool"
-}
-
 fn main() {
     rocket::ignite()
         .manage(db::init_pool())
-        .mount("/", routes![index])
+        .mount("/", routes![api::index::index])
         .mount("/login", routes![api::login::login])
         .mount(
             "/player",
