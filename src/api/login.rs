@@ -31,7 +31,7 @@ pub fn login(req: Json<LoginRequest>, conn: DbConn) -> Result<Json<LoginResponse
                 if success {
                     let claims = Claims {
                         id: player.id.to_string(),
-                        exp: current_time() + 604800000, // + 7 days
+                        exp: current_time() + 604800, // + 7 days
                     };
                     match encode(&Header::default(), &claims, secret.as_ref()) {
                         Ok(token) => Ok(Json(LoginResponse { token })),
