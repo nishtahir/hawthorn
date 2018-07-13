@@ -52,9 +52,15 @@ impl Insertable for NewGame {
 }
 
 impl NewGame {
-    pub fn new() -> NewGame {
-        let timespec = time::get_time();
-        let millis: f64 = timespec.sec as f64 + (timespec.nsec as f64 / 1000.0 / 1000.0 / 1000.0);
+    pub fn new(timestamp: &Option<i32>) -> NewGame {
+        let millis = match timestamp {
+            Some(value) => *value as f64,
+            None => {
+                let timespec = time::get_time();
+                timespec.sec as f64 + (timespec.nsec as f64 / 1000.0 / 1000.0 / 1000.0)
+            }
+        };
+
         NewGame { time_stamp: millis }
     }
 }

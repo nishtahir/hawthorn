@@ -23,15 +23,16 @@ impl Elo for NewParticipant {
                         );
 
                         // We both won or lost - call it a draw
-                        let outcome = if i.win == opponent.win {
-                            GameOutcome::DRAW
+                        let new_elo = if i.win && opponent.win {
+                            elo_rating(i.elo, 40.0, GameOutcome::DRAW, expected)
                         } else if i.win && !opponent.win {
-                            GameOutcome::WIN
+                            elo_rating(i.elo, 40.0, GameOutcome::WIN, expected)
+                        } else if !i.win && opponent.win {
+                            elo_rating(i.elo, 40.0, GameOutcome::LOSE, expected)
                         } else {
-                            GameOutcome::LOSE
+                            i.elo
                         };
 
-                        let new_elo = elo_rating(i.elo, 40.0, outcome, expected);
                         let entry = transactions.entry(i.deck_id).or_insert(0.0);
                         *entry += (new_elo - i.elo) / (win_count as f64)
                     }
@@ -192,4 +193,21 @@ fn test_compute_elo_with_4_participants_and_0_winners() {
     assert_eq!(result[1].elo, 1000.0);
     assert_eq!(result[2].elo, 1000.0);
     assert_eq!(result[3].elo, 1000.0);
+}
+
+#[test]
+fn test_compute_elo_with_3_participants_and_1_winners() {
+    let test_case = vec![
+        NewParticipant::new(0, 1, true, 1079.0),
+        NewParticipant::new(0, 2, false, 800.0),
+        NewParticipant::new(0, 3, false, 700.0),
+        NewParticipant::new(0, 4, false, 750.0),
+    ];
+
+    let result = NewParticipant::compute_elo(&test_case);
+
+    assert_eq!(result[0].elo, 1094.9738566157434);
+    assert_eq!(result[1].elo, 793.3145076104151);
+    assert_eq!(result[2].elo, 695.9437611556393);
+    assert_eq!(result[3].elo, 744.7678746182022);
 }

@@ -17,7 +17,7 @@ pub struct Participant {
     pub elo: f64,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug)]
 #[table_name = "participant"]
 pub struct NewParticipant {
     pub game_id: i32,

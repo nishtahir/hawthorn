@@ -29,6 +29,7 @@ struct ParticipantResponse {
 
 #[derive(Deserialize)]
 struct GameRequest {
+    timestamp: Option<i32>,
     participants: Vec<ParticipantRequest>,
 }
 
@@ -79,7 +80,7 @@ fn create_game(
     _token: ApiToken,
 ) -> Result<Json<GameDetailResponse>, ApiError> {
     let game_request = req.into_inner();
-    let new_game = NewGame::insert(NewGame::new(), &conn)?;
+    let new_game = NewGame::insert(NewGame::new(&game_request.timestamp), &conn)?;
 
     let new_participants = game_request
         .participants
