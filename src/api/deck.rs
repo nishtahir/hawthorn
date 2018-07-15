@@ -18,13 +18,6 @@ struct DeckResponse {
     id: i32,
     alias: String,
     commander: String,
-}
-
-#[derive(Serialize)]
-struct DeckDetailResponse {
-    id: i32,
-    alias: String,
-    commander: String,
     games: i32,
     wins: i32,
     elo: f64,
@@ -35,28 +28,43 @@ fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, 
     let decks = Deck::all(&conn)?;
     let response = decks
         .into_iter()
-        .map(|deck| DeckResponse {
-            id: deck.id,
-            alias: deck.alias,
-            commander: deck.commander,
+        .map(|deck| {
+            let participations = Participant::find_by_deck(&deck, &conn);
+
+            let (games, wins, elo) = participations
+                .map(|p_list| {
+                    let games = p_list.len() as i32;
+                    let wins = p_list.iter().filter(|&p| p.win == true).count() as i32;
+                    let elo = p_list.first().map_or(1000.0, |p| p.elo);
+                    (games, wins, elo)
+                })
+                .unwrap_or((0, 0, 0.0));
+
+            DeckResponse {
+                id: deck.id,
+                alias: deck.alias,
+                commander: deck.commander,
+                games: games,
+                wins: wins,
+                elo: elo,
+            }
         })
         .collect();
     Ok(Json(response))
 }
 
 #[get("/<id>")]
-fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckDetailResponse>, ApiError> {
+fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse>, ApiError> {
     let deck = Deck::find(id, &conn)?;
     let participations = Participant::find_by_deck(&deck, &conn)?;
-    println!("{:?}", participations);
 
-    let response = DeckDetailResponse {
+    let response = DeckResponse {
         id: deck.id,
         alias: deck.alias,
         commander: deck.commander,
         games: participations.len() as i32,
         wins: participations.iter().filter(|&p| p.win == true).count() as i32,
-        elo: participations.first().map_or(900.0, |p| p.elo),
+        elo: participations.first().map_or(1000.0, |p| p.elo),
     };
 
     Ok(Json(response))
@@ -67,7 +75,7 @@ fn create_deck(
     req: Json<DeckRequest>,
     conn: DbConn,
     _token: ApiToken,
-) -> Result<Json<DeckDetailResponse>, ApiError> {
+) -> Result<Json<DeckResponse>, ApiError> {
     let deck_request = req.into_inner();
 
     let new_deck = NewDeck {
@@ -77,7 +85,7 @@ fn create_deck(
     };
 
     let deck = NewDeck::insert(new_deck, &conn)?;
-    let response = DeckDetailResponse {
+    let response = DeckResponse {
         id: deck.id,
         alias: deck.alias,
         commander: deck.commander,
