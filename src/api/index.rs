@@ -6,6 +6,8 @@ const QUOTES: &'static [&'static str] = &[
     "Will you pay 1 to prevent me from drawing a card?",
     "Sacrifice! Sacrifice! Sacrifice!",
     "Everything costs 1 more. It's non optional",
+    "He's ramping! Kill him!",
+    "Fog!",
 ];
 
 #[get("/")]
