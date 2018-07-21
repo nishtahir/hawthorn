@@ -24,7 +24,11 @@ fn main() {
         .mount("/login", routes![api::login::login])
         .mount(
             "/player",
-            routes![api::player::get_player, api::player::create_player],
+            routes![
+                api::player::get_player,
+                api::player::create_player,
+                api::player::update_player
+            ],
         )
         .mount("/players", routes![api::player::get_players])
         .mount(
