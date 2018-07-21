@@ -13,6 +13,13 @@ struct DeckRequest {
     commander: String,
 }
 
+#[derive(Deserialize)]
+struct UpdateDeckRequest {
+    id: i32,
+    alias: Option<String>,
+    commander: Option<String>,
+}
+
 #[derive(Serialize)]
 struct DeckResponse {
     id: i32,
@@ -92,6 +99,37 @@ fn create_deck(
         games: 0,
         wins: 0,
         elo: 1000.0,
+    };
+
+    Ok(Json(response))
+}
+
+#[put("/", format = "application/json", data = "<req>")]
+fn update_deck(
+    req: Json<UpdateDeckRequest>,
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<DeckResponse>, ApiError> {
+    let update_deck_request = req.into_inner();
+
+    let _deck = Deck::find(update_deck_request.id, &conn)?;
+    let new_deck = Deck {
+        id: _deck.id,
+        alias: update_deck_request.alias.unwrap_or(_deck.alias),
+        commander: update_deck_request.commander.unwrap_or(_deck.commander),
+        player_id: _deck.player_id,
+    };
+
+    let deck = Deck::update(new_deck, &conn)?;
+    let participations = Participant::find_by_deck(&deck, &conn)?;
+
+    let response = DeckResponse {
+        id: deck.id,
+        alias: deck.alias,
+        commander: deck.commander,
+        games: participations.len() as i32,
+        wins: participations.iter().filter(|&p| p.win == true).count() as i32,
+        elo: participations.first().map_or(1000.0, |p| p.elo),
     };
 
     Ok(Json(response))

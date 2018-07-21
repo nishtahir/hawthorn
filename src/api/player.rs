@@ -14,10 +14,24 @@ pub struct CreatePlayerRequest {
     password: String,
 }
 
+#[derive(Deserialize)]
+pub struct UpdatePlayerRequest {
+    id: i32,
+    alias: Option<String>,
+    email: Option<String>,
+}
+
 #[derive(Serialize)]
 pub struct PlayerResponse {
     id: i32,
     alias: String,
+}
+
+#[derive(Serialize)]
+pub struct PlayerDetailResponse {
+    id: i32,
+    alias: String,
+    decks: Vec<Deck>,
 }
 
 #[post("/", format = "application/json", data = "<req>")]
@@ -41,27 +55,26 @@ pub fn create_player(
             alias: player.alias,
         })
     })?;
+
     Ok(response)
 }
 
 #[get("/")]
-fn get_players(conn: DbConn) -> Result<Json<Vec<PlayerResponse>>, ApiError> {
+fn get_players(
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<Vec<PlayerDetailResponse>>, ApiError> {
     let players = Player::all(&conn)?;
-    let response = players
+
+    let response = Deck::all_decks_grouped_by_player(players, &conn)?
         .into_iter()
-        .map(|player| PlayerResponse {
+        .map(|(player, decks)| PlayerDetailResponse {
             id: player.id,
             alias: player.alias,
+            decks: decks,
         })
         .collect();
     Ok(Json(response))
-}
-
-#[derive(Serialize)]
-pub struct PlayerDetailResponse {
-    id: i32,
-    alias: String,
-    decks: Vec<Deck>,
 }
 
 #[get("/<id>")]
@@ -72,10 +85,38 @@ pub fn get_player(
 ) -> Result<Json<PlayerDetailResponse>, ApiError> {
     let player = Player::find(id, &conn)?;
     let decks = Deck::find_by_player(&player, &conn)?;
+
     let response = PlayerDetailResponse {
         id: player.id,
         alias: player.alias,
         decks: decks,
+    };
+
+    Ok(Json(response))
+}
+
+#[put("/", format = "application/json", data = "<req>")]
+pub fn update_player(
+    req: Json<UpdatePlayerRequest>,
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<PlayerResponse>, ApiError> {
+    let update_request = req.into_inner();
+
+    let old_player = Player::find(update_request.id, &conn)?;
+    let new_player = Player::update(
+        Player {
+            id: old_player.id,
+            alias: update_request.alias.unwrap_or(old_player.alias),
+            email: update_request.email.unwrap_or(old_player.email),
+            password: old_player.password,
+        },
+        &conn,
+    )?;
+
+    let response = PlayerResponse {
+        id: new_player.id,
+        alias: new_player.alias,
     };
 
     Ok(Json(response))

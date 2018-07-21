@@ -60,4 +60,14 @@ impl Deck {
     pub fn find_by_player(player: &Player, conn: &SqliteConnection) -> QueryResult<Vec<Deck>> {
         Deck::belonging_to(player).load::<Deck>(conn)
     }
+
+    pub fn all_decks_grouped_by_player(
+        players: Vec<Player>,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Vec<(Player, Vec<Deck>)>> {
+        let decks = Deck::belonging_to(&players)
+            .load::<Deck>(conn)?
+            .grouped_by(&players);
+        Ok(players.into_iter().zip(decks).collect::<Vec<_>>())
+    }
 }
