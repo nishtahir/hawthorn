@@ -18,6 +18,7 @@ struct UpdateDeckRequest {
     id: i32,
     alias: Option<String>,
     commander: Option<String>,
+    active: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -89,6 +90,7 @@ fn create_deck(
         alias: deck_request.alias,
         commander: deck_request.commander,
         player_id: deck_request.player_id,
+        active: true,
     };
 
     let deck = NewDeck::insert(new_deck, &conn)?;
@@ -118,6 +120,7 @@ fn update_deck(
         alias: update_deck_request.alias.unwrap_or(_deck.alias),
         commander: update_deck_request.commander.unwrap_or(_deck.commander),
         player_id: _deck.player_id,
+        active: update_deck_request.active.unwrap_or(_deck.active),
     };
 
     let deck = Deck::update(new_deck, &conn)?;
