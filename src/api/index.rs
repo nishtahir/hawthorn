@@ -8,6 +8,7 @@ const QUOTES: &'static [&'static str] = &[
     "Everything costs 1 more. It's non optional",
     "He's ramping! Kill him!",
     "Fog!",
+    "TAKE THE GOLD!",
 ];
 
 #[get("/")]
