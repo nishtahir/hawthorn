@@ -12,6 +12,7 @@ pub struct Deck {
     pub alias: String,
     pub commander: String,
     pub player_id: i32,
+    pub active: bool,
 }
 
 #[derive(Insertable)]
@@ -21,6 +22,7 @@ pub struct NewDeck {
     pub alias: String,
     pub commander: String,
     pub player_id: i32,
+    pub active: bool,
 }
 
 impl Retrievable for Deck {

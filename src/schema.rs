@@ -4,6 +4,7 @@ table! {
         alias -> Text,
         commander -> Text,
         player_id -> Integer,
+        active -> Bool,
     }
 }
 

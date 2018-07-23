@@ -18,6 +18,7 @@ struct UpdateDeckRequest {
     id: i32,
     alias: Option<String>,
     commander: Option<String>,
+    active: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -25,6 +26,7 @@ struct DeckResponse {
     id: i32,
     alias: String,
     commander: String,
+    active: bool,
     games: i32,
     wins: i32,
     elo: f64,
@@ -51,6 +53,7 @@ fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, 
                 id: deck.id,
                 alias: deck.alias,
                 commander: deck.commander,
+                active: deck.active,
                 games: games,
                 wins: wins,
                 elo: elo,
@@ -69,6 +72,7 @@ fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse
         id: deck.id,
         alias: deck.alias,
         commander: deck.commander,
+        active: deck.active,
         games: participations.len() as i32,
         wins: participations.iter().filter(|&p| p.win == true).count() as i32,
         elo: participations.first().map_or(1000.0, |p| p.elo),
@@ -89,6 +93,7 @@ fn create_deck(
         alias: deck_request.alias,
         commander: deck_request.commander,
         player_id: deck_request.player_id,
+        active: true,
     };
 
     let deck = NewDeck::insert(new_deck, &conn)?;
@@ -96,6 +101,7 @@ fn create_deck(
         id: deck.id,
         alias: deck.alias,
         commander: deck.commander,
+        active: deck.active,
         games: 0,
         wins: 0,
         elo: 1000.0,
@@ -118,6 +124,7 @@ fn update_deck(
         alias: update_deck_request.alias.unwrap_or(_deck.alias),
         commander: update_deck_request.commander.unwrap_or(_deck.commander),
         player_id: _deck.player_id,
+        active: update_deck_request.active.unwrap_or(_deck.active),
     };
 
     let deck = Deck::update(new_deck, &conn)?;
@@ -127,6 +134,7 @@ fn update_deck(
         id: deck.id,
         alias: deck.alias,
         commander: deck.commander,
+        active: deck.active,
         games: participations.len() as i32,
         wins: participations.iter().filter(|&p| p.win == true).count() as i32,
         elo: participations.first().map_or(1000.0, |p| p.elo),
