@@ -1,6 +1,7 @@
 # Hawthorn
 
-[![Build Status](https://travis-ci.org/nishtahir/hawthorn.svg?branch=master)](https://travis-ci.org/nishtahir/hawthorn)
+![Travis Build Status](https://img.shields.io/travis/nishtahir/hawthorn.svg)
+![Docker Build Status](https://img.shields.io/docker/build/nishtahir/hawthorn.svg)
 
 ELO as a service.
 
