@@ -1,6 +1,6 @@
 # No official musl container yet. 
 # https://github.com/rust-lang-nursery/docker-rust/issues/10
-FROM clux/muslrust:nightly-2018-06-28 As builder
+FROM clux/muslrust:nightly-2018-07-16 As builder
 ADD . ./
 RUN cargo build --locked --target=x86_64-unknown-linux-musl --release
 
