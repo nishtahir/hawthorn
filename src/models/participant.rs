@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use models::deck::Deck;
 use models::game::Game;
 use models::Retrievable;
+use schema::game;
 use schema::participant;
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, Associations, Debug)]
@@ -27,6 +28,17 @@ pub struct NewParticipant {
 }
 
 impl Participant {
+    pub fn all_participant_grouped_by_deck(
+        decks: Vec<Deck>,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Vec<(Deck, Vec<Participant>)>> {
+        let participants = Participant::belonging_to(&decks)
+            .order(participant::id.desc())
+            .load::<Participant>(conn)?
+            .grouped_by(&decks);
+        Ok(decks.into_iter().zip(participants).collect::<Vec<_>>())
+    }
+
     pub fn find_by_game(game: &Game, conn: &SqliteConnection) -> QueryResult<Vec<Participant>> {
         Participant::belonging_to(game).load::<Participant>(conn)
     }
@@ -37,14 +49,28 @@ impl Participant {
             .load::<Participant>(conn)
     }
 
-    pub fn find_latest_participant_by_deck_id(
+    pub fn find_latest_by_deck(deck: &Deck, conn: &SqliteConnection) -> QueryResult<Participant> {
+        Participant::belonging_to(deck)
+            .order(participant::id.desc())
+            .first(conn)
+    }
+
+    pub fn find_latest_by_deck_id(
         deck_id: i32,
         conn: &SqliteConnection,
     ) -> QueryResult<Participant> {
         let deck = Deck::find(deck_id, conn)?;
-        Participant::belonging_to(&deck)
+        Participant::find_latest_by_deck(&deck, conn)
+    }
+
+    pub fn find_by_deck_with_game(
+        deck: &Deck,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Vec<(Participant, Game)>> {
+        Participant::belonging_to(deck)
+            .inner_join(game::table.on(game::id.eq(participant::game_id)))
             .order(participant::id.desc())
-            .first(conn)
+            .load::<_>(conn)
     }
 }
 

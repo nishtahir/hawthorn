@@ -1,7 +1,7 @@
 # Hawthorn
 
-![Travis Build Status](https://img.shields.io/travis/nishtahir/hawthorn.svg)
-![Docker Build Status](https://img.shields.io/docker/build/nishtahir/hawthorn.svg)
+[![Travis Build Status](https://img.shields.io/travis/nishtahir/hawthorn.svg)](https://travis-ci.org/nishtahir/hawthorn)
+[![Docker Build Status](https://img.shields.io/docker/build/nishtahir/hawthorn.svg)](https://hub.docker.com/r/nishtahir/hawthorn/)
 
 ELO as a service.
 
@@ -17,6 +17,21 @@ Make sure you have the `rustfmt-preview` component installed.
 
 ```sh
 $ rustup component add rustfmt-preview
+```
+
+## Building
+
+Local builds can simply use cargo with the optional release flag. The project does require a version of rust nightly
+which is specified in the `rust-toolchain` file.
+
+```
+cargo build --release
+```
+
+However a docker based build is available
+
+```
+docker build .
 ```
 
 ## Deployment
@@ -39,3 +54,9 @@ docker run -d -e DATABASE_URL=/data/production-db.sqlite \
 > Note that the image is based on alpine which does not set a `localhost` variable which
 > Rocket uses by default in development mode. As a result, you should pass a `ROCKET_ADDRESS` as
 > part of your deployment. 
+
+The database can be prepared using diesel's migration tool. 
+
+```
+diesel migration run
+```

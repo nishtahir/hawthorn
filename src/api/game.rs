@@ -86,7 +86,7 @@ fn create_game(
         .participants
         .into_iter()
         .map(|x| {
-            let last_elo: f64 = Participant::find_latest_participant_by_deck_id(x.deck_id, &conn)
+            let last_elo: f64 = Participant::find_latest_by_deck_id(x.deck_id, &conn)
                 .map(|p| p.elo)
                 .unwrap_or(1000.0);
 

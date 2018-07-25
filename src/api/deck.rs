@@ -32,33 +32,28 @@ struct DeckResponse {
     elo: f64,
 }
 
+impl DeckResponse {
+    fn new(deck: Deck, participations: Vec<Participant>) -> DeckResponse {
+        DeckResponse {
+            id: deck.id,
+            alias: deck.alias,
+            commander: deck.commander,
+            active: deck.active,
+            games: participations.len() as i32,
+            wins: participations.iter().filter(|&p| p.win == true).count() as i32,
+            elo: participations.first().map_or(1000.0, |p| p.elo),
+        }
+    }
+}
+
 #[get("/")]
 fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, ApiError> {
     let decks = Deck::all(&conn)?;
-    let response = decks
+    let participants = Participant::all_participant_grouped_by_deck(decks, &conn)?;
+
+    let response = participants
         .into_iter()
-        .map(|deck| {
-            let participations = Participant::find_by_deck(&deck, &conn);
-
-            let (games, wins, elo) = participations
-                .map(|p_list| {
-                    let games = p_list.len() as i32;
-                    let wins = p_list.iter().filter(|&p| p.win == true).count() as i32;
-                    let elo = p_list.first().map_or(1000.0, |p| p.elo);
-                    (games, wins, elo)
-                })
-                .unwrap_or((0, 0, 0.0));
-
-            DeckResponse {
-                id: deck.id,
-                alias: deck.alias,
-                commander: deck.commander,
-                active: deck.active,
-                games: games,
-                wins: wins,
-                elo: elo,
-            }
-        })
+        .map(|(deck, participations)| DeckResponse::new(deck, participations))
         .collect();
     Ok(Json(response))
 }
@@ -67,17 +62,7 @@ fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, 
 fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse>, ApiError> {
     let deck = Deck::find(id, &conn)?;
     let participations = Participant::find_by_deck(&deck, &conn)?;
-
-    let response = DeckResponse {
-        id: deck.id,
-        alias: deck.alias,
-        commander: deck.commander,
-        active: deck.active,
-        games: participations.len() as i32,
-        wins: participations.iter().filter(|&p| p.win == true).count() as i32,
-        elo: participations.first().map_or(1000.0, |p| p.elo),
-    };
-
+    let response = DeckResponse::new(deck, participations);
     Ok(Json(response))
 }
 
@@ -129,16 +114,7 @@ fn update_deck(
 
     let deck = Deck::update(new_deck, &conn)?;
     let participations = Participant::find_by_deck(&deck, &conn)?;
-
-    let response = DeckResponse {
-        id: deck.id,
-        alias: deck.alias,
-        commander: deck.commander,
-        active: deck.active,
-        games: participations.len() as i32,
-        wins: participations.iter().filter(|&p| p.win == true).count() as i32,
-        elo: participations.first().map_or(1000.0, |p| p.elo),
-    };
+    let response = DeckResponse::new(deck, participations);
 
     Ok(Json(response))
 }
