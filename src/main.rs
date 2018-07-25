@@ -23,7 +23,7 @@ fn main() {
     rocket::ignite()
         .manage(db::init_pool())
         .mount("/", routes![api::index::index])
-        .mount("/login", routes![api::login::login])
+        .mount("/auth", routes![api::auth::login])
         .mount(
             "/player",
             routes![
