@@ -28,13 +28,25 @@ pub struct NewParticipant {
 }
 
 impl Participant {
-    pub fn all_participant_grouped_by_deck(
+    pub fn all_grouped_by_deck(
         decks: Vec<Deck>,
         conn: &SqliteConnection,
     ) -> QueryResult<Vec<(Deck, Vec<Participant>)>> {
         let participants = Participant::belonging_to(&decks)
             .order(participant::id.desc())
             .load::<Participant>(conn)?
+            .grouped_by(&decks);
+        Ok(decks.into_iter().zip(participants).collect::<Vec<_>>())
+    }
+
+    pub fn all_by_deck_join_game(
+        decks: Vec<Deck>,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Vec<(Deck, Vec<(Participant, Game)>)>> {
+        let participants = Participant::belonging_to(&decks)
+            .inner_join(game::table.on(game::id.eq(participant::game_id)))
+            .order(participant::id.desc())
+            .load::<(Participant, Game)>(conn)?
             .grouped_by(&decks);
         Ok(decks.into_iter().zip(participants).collect::<Vec<_>>())
     }
