@@ -1,5 +1,7 @@
+use api::error::ApiError;
 use rand;
 use rand::Rng;
+use rocket_contrib::Json;
 
 const QUOTES: &'static [&'static str] = &[
     "Tap to add 3 mana of any color to your mana pool",
@@ -11,7 +13,13 @@ const QUOTES: &'static [&'static str] = &[
     "TAKE THE GOLD!",
 ];
 
+#[derive(Serialize)]
+struct IndexResponse {
+    quote: &'static str,
+}
+
 #[get("/")]
-fn index() -> Option<&'static str> {
-    rand::thread_rng().choose(&QUOTES).map(|&s| s)
+fn index() -> Result<Json<IndexResponse>, ApiError> {
+    let quote = rand::thread_rng().choose(&QUOTES).map_or("", |&s| s);
+    Ok(Json(IndexResponse { quote: quote }))
 }
