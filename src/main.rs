@@ -1,5 +1,7 @@
 #![feature(plugin, custom_attribute)]
 #![plugin(rocket_codegen)]
+#![allow(proc_macro_derive_resolution_fallback)] // This can be removed after diesel-1.4
+
 extern crate bcrypt;
 extern crate dotenv;
 extern crate jsonwebtoken;
@@ -21,7 +23,7 @@ fn main() {
     rocket::ignite()
         .manage(db::init_pool())
         .mount("/", routes![api::index::index])
-        .mount("/login", routes![api::login::login])
+        .mount("/auth", routes![api::auth::login])
         .mount(
             "/player",
             routes![
