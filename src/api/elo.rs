@@ -94,120 +94,126 @@ fn elo_rating(current_rating: f64, impact: f64, outcome: GameOutcome, expected_s
     current_rating + impact * (f64::from(outcome) - expected_score)
 }
 
-#[test]
-fn test_elo_rating() {
-    assert_eq!{
-        elo_rating(1000.0, 40.0, GameOutcome::WIN, expected_score(1000.0, 1000.0)),
-        1020.0
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_elo_rating() {
+        assert_eq!{
+            elo_rating(1000.0, 40.0, GameOutcome::WIN, expected_score(1000.0, 1000.0)),
+            1020.0
+        }
+
+        assert_eq!{
+            elo_rating(1000.0, 40.0, GameOutcome::LOSE, expected_score(1000.0, 1000.0)),
+            980.0
+        }
+
+        assert_eq!{
+            elo_rating(1000.0, 40.0, GameOutcome::DRAW, expected_score(1000.0, 1000.0)),
+            1000.0
+        }
     }
 
-    assert_eq!{
-        elo_rating(1000.0, 40.0, GameOutcome::LOSE, expected_score(1000.0, 1000.0)),
-        980.0
+    #[test]
+    fn test_expected_score() {
+        assert_eq!(
+            expected_score(316.22776601683796, 87.9922539629475),
+            0.7823159427696138
+        );
+        assert_eq!(expected_score(1000.0, 1000.0), 0.5);
+        assert_eq!(expected_score(0.0, 0.0), 0.0);
     }
 
-    assert_eq!{
-        elo_rating(1000.0, 40.0, GameOutcome::DRAW, expected_score(1000.0, 1000.0)),
-        1000.0
+    #[test]
+    fn test_tranformed_rating() {
+        assert_eq!(transformed_rating(1000.0), 316.22776601683796);
+        assert_eq!(transformed_rating(0.0), 1.0);
+        assert_eq!(transformed_rating(777.777777), 87.9922539629475);
     }
-}
 
-#[test]
-fn test_expected_score() {
-    assert_eq!(
-        expected_score(316.22776601683796, 87.9922539629475),
-        0.7823159427696138
-    );
-    assert_eq!(expected_score(1000.0, 1000.0), 0.5);
-    assert_eq!(expected_score(0.0, 0.0), 0.0);
-}
+    #[test]
+    fn test_compute_elo_with_3_participants_and_1_winner() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, true, 1000.0),
+            NewParticipant::new(0, 2, false, 1000.0),
+            NewParticipant::new(0, 3, false, 1000.0),
+        ];
 
-#[test]
-fn test_tranformed_rating() {
-    assert_eq!(transformed_rating(1000.0), 316.22776601683796);
-    assert_eq!(transformed_rating(0.0), 1.0);
-    assert_eq!(transformed_rating(777.777777), 87.9922539629475);
-}
+        let result = NewParticipant::compute_elo(&test_case);
 
-#[test]
-fn test_compute_elo_with_3_participants_and_1_winner() {
-    let test_case = vec![
-        NewParticipant::new(0, 1, true, 1000.0),
-        NewParticipant::new(0, 2, false, 1000.0),
-        NewParticipant::new(0, 3, false, 1000.0),
-    ];
+        assert_eq!(result[0].elo, 1040.0);
+        assert_eq!(result[1].elo, 980.0);
+        assert_eq!(result[2].elo, 980.0);
+    }
 
-    let result = NewParticipant::compute_elo(&test_case);
+    #[test]
+    fn test_compute_elo_with_4_participants_and_2_winners() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, true, 1000.0),
+            NewParticipant::new(0, 2, false, 1000.0),
+            NewParticipant::new(0, 3, true, 1000.0),
+            NewParticipant::new(0, 4, false, 1000.0),
+        ];
 
-    assert_eq!(result[0].elo, 1040.0);
-    assert_eq!(result[1].elo, 980.0);
-    assert_eq!(result[2].elo, 980.0);
-}
+        let result = NewParticipant::compute_elo(&test_case);
 
-#[test]
-fn test_compute_elo_with_4_participants_and_2_winners() {
-    let test_case = vec![
-        NewParticipant::new(0, 1, true, 1000.0),
-        NewParticipant::new(0, 2, false, 1000.0),
-        NewParticipant::new(0, 3, true, 1000.0),
-        NewParticipant::new(0, 4, false, 1000.0),
-    ];
+        assert_eq!(result[0].elo, 1020.0);
+        assert_eq!(result[1].elo, 980.0);
+        assert_eq!(result[2].elo, 1020.0);
+        assert_eq!(result[3].elo, 980.0);
+    }
 
-    let result = NewParticipant::compute_elo(&test_case);
+    #[test]
+    fn test_compute_elo_with_4_participants_and_4_winners() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, true, 1000.0),
+            NewParticipant::new(0, 2, true, 1000.0),
+            NewParticipant::new(0, 3, true, 1000.0),
+            NewParticipant::new(0, 4, true, 1000.0),
+        ];
 
-    assert_eq!(result[0].elo, 1020.0);
-    assert_eq!(result[1].elo, 980.0);
-    assert_eq!(result[2].elo, 1020.0);
-    assert_eq!(result[3].elo, 980.0);
-}
+        let result = NewParticipant::compute_elo(&test_case);
 
-#[test]
-fn test_compute_elo_with_4_participants_and_4_winners() {
-    let test_case = vec![
-        NewParticipant::new(0, 1, true, 1000.0),
-        NewParticipant::new(0, 2, true, 1000.0),
-        NewParticipant::new(0, 3, true, 1000.0),
-        NewParticipant::new(0, 4, true, 1000.0),
-    ];
+        assert_eq!(result[0].elo, 1000.0);
+        assert_eq!(result[1].elo, 1000.0);
+        assert_eq!(result[2].elo, 1000.0);
+        assert_eq!(result[3].elo, 1000.0);
+    }
 
-    let result = NewParticipant::compute_elo(&test_case);
+    #[test]
+    fn test_compute_elo_with_4_participants_and_0_winners() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, false, 1000.0),
+            NewParticipant::new(0, 2, false, 1000.0),
+            NewParticipant::new(0, 3, false, 1000.0),
+            NewParticipant::new(0, 4, false, 1000.0),
+        ];
 
-    assert_eq!(result[0].elo, 1000.0);
-    assert_eq!(result[1].elo, 1000.0);
-    assert_eq!(result[2].elo, 1000.0);
-    assert_eq!(result[3].elo, 1000.0);
-}
+        let result = NewParticipant::compute_elo(&test_case);
 
-#[test]
-fn test_compute_elo_with_4_participants_and_0_winners() {
-    let test_case = vec![
-        NewParticipant::new(0, 1, false, 1000.0),
-        NewParticipant::new(0, 2, false, 1000.0),
-        NewParticipant::new(0, 3, false, 1000.0),
-        NewParticipant::new(0, 4, false, 1000.0),
-    ];
+        assert_eq!(result[0].elo, 1000.0);
+        assert_eq!(result[1].elo, 1000.0);
+        assert_eq!(result[2].elo, 1000.0);
+        assert_eq!(result[3].elo, 1000.0);
+    }
 
-    let result = NewParticipant::compute_elo(&test_case);
+    #[test]
+    fn test_compute_elo_with_3_participants_and_1_winners() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, true, 1079.0),
+            NewParticipant::new(0, 2, false, 800.0),
+            NewParticipant::new(0, 3, false, 700.0),
+            NewParticipant::new(0, 4, false, 750.0),
+        ];
 
-    assert_eq!(result[0].elo, 1000.0);
-    assert_eq!(result[1].elo, 1000.0);
-    assert_eq!(result[2].elo, 1000.0);
-    assert_eq!(result[3].elo, 1000.0);
-}
+        let result = NewParticipant::compute_elo(&test_case);
 
-#[test]
-fn test_compute_elo_with_3_participants_and_1_winners() {
-    let test_case = vec![
-        NewParticipant::new(0, 1, true, 1079.0),
-        NewParticipant::new(0, 2, false, 800.0),
-        NewParticipant::new(0, 3, false, 700.0),
-        NewParticipant::new(0, 4, false, 750.0),
-    ];
-
-    let result = NewParticipant::compute_elo(&test_case);
-
-    assert_eq!(result[0].elo, 1094.9738566157434);
-    assert_eq!(result[1].elo, 793.3145076104151);
-    assert_eq!(result[2].elo, 695.9437611556393);
-    assert_eq!(result[3].elo, 744.7678746182022);
+        assert_eq!(result[0].elo, 1094.9738566157434);
+        assert_eq!(result[1].elo, 793.3145076104151);
+        assert_eq!(result[2].elo, 695.9437611556393);
+        assert_eq!(result[3].elo, 744.7678746182022);
+    }
 }
