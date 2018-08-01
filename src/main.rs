@@ -25,28 +25,31 @@ fn main() {
         .mount("/", routes![api::index::index])
         .mount("/auth", routes![api::auth::login])
         .mount(
-            "/player",
+            "/players",
             routes![
+                api::player::get_players,
                 api::player::get_player,
                 api::player::create_player,
                 api::player::update_player
             ],
         )
-        .mount("/players", routes![api::player::get_players])
         .mount(
-            "/deck",
+            "/decks",
             routes![
+                api::deck::get_decks,
                 api::deck::get_deck,
                 api::deck::create_deck,
                 api::deck::update_deck,
                 api::deck::get_leaderboard
             ],
         )
-        .mount("/decks", routes![api::deck::get_decks])
-        .mount("/games", routes![api::game::get_games])
         .mount(
-            "/game",
-            routes![api::game::get_game, api::game::create_game],
+            "/games",
+            routes![
+                api::game::get_games,
+                api::game::get_game,
+                api::game::create_game
+            ],
         )
         .launch();
 }
