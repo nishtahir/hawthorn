@@ -4,6 +4,8 @@ use db::DbConn;
 use models::deck::{Deck, NewDeck};
 use models::participant::Participant;
 use models::{Insertable, Retrievable};
+use rocket::request;
+use rocket::request::FromFormValue;
 use rocket_contrib::Json;
 use std::cmp::Ordering;
 use time;
@@ -32,6 +34,28 @@ struct DeckResponse {
     games: i32,
     wins: i32,
     elo: f64,
+}
+
+#[derive(Deserialize, Debug)]
+struct PodReqestParam {
+    players: Vec<i32>,
+}
+
+impl<'f> request::FromForm<'f> for PodReqestParam {
+    type Error = ApiError;
+
+    fn from_form(form_items: &mut request::FormItems<'f>, _: bool) -> Result<Self, Self::Error> {
+        let mut req = PodReqestParam { players: vec![] };
+        for (k, v) in form_items {
+            let key: &str = &*k;
+            let value = i32::from_form_value(v).map_err(|_| ApiError::BadRequest)?;
+            match key {
+                "player_id" => req.players.push(value),
+                _ => return Err(ApiError::BadRequest),
+            }
+        }
+        Ok(req)
+    }
 }
 
 impl DeckResponse {
@@ -95,6 +119,21 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
         .collect::<Vec<DeckResponse>>();
 
     response.sort_by(|a, b| b.elo.partial_cmp(&a.elo).unwrap_or(Ordering::Less));
+    Ok(Json(response))
+}
+
+#[get("/pods?<params>")]
+fn get_pods(
+    params: PodReqestParam,
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<Vec<DeckResponse>>, ApiError> {
+    let mut response = vec![];
+    for id in params.players {
+        let deck = Deck::find(id, &conn)?;
+        let participations = Participant::find_by_deck(&deck, &conn)?;
+        response.push(DeckResponse::new(deck, participations))
+    }
     Ok(Json(response))
 }
 

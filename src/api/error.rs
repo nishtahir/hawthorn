@@ -8,6 +8,7 @@ use std::convert::From;
 #[derive(Debug)]
 pub enum ApiError {
     NotFound,
+    BadRequest,
     InternalServerError,
 }
 

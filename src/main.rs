@@ -1,4 +1,4 @@
-#![feature(plugin, custom_attribute)]
+#![feature(plugin, custom_attribute, custom_derive)]
 #![plugin(rocket_codegen)]
 #![allow(proc_macro_derive_resolution_fallback)] // This can be removed after diesel-1.4
 
@@ -40,7 +40,8 @@ fn main() {
                 api::deck::get_deck,
                 api::deck::create_deck,
                 api::deck::update_deck,
-                api::deck::get_leaderboard
+                api::deck::get_leaderboard,
+                api::deck::get_pods
             ],
         )
         .mount(
