@@ -7,7 +7,11 @@ ELO as a service.
 
 ## Development Setup
 
-In order to update the schema and perform database migrations you need the Diesel cli tool installed
+To get started you need to install Rust, Cargo and enable the nightly toolchain. All of these can be 
+installed using the excellent [Rustup](https://rustup.rs/) toolchain installer.
+
+Database management is done using Diesel. To manually perform database migrations you need the 
+Diesel cli tool installed for SQLite.
 
 ```
 cargo install diesel_cli --no-default-features --features "sqlite"
@@ -18,6 +22,12 @@ Make sure you have the `rustfmt-preview` component installed.
 ```sh
 $ rustup component add rustfmt-preview
 ```
+
+While code style is not enforced at build time. `cargo fmt` is the recommended code formatter 
+and `cargo fmt --all`should be run before every commit.
+
+A precommit hook is available in `/hooks` to enforce this locally. to install the hook, copy
+`hooks/pre-commit` into `.git/hooks/pre-commit`.
 
 ## Building
 
