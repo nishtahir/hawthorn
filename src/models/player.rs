@@ -49,6 +49,20 @@ impl Player {
             .filter(player::email.eq(email))
             .first(conn)
     }
+
+    pub fn update_password(
+        self,
+        password_hash: String,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Player> {
+        let new_player = Player {
+            id: self.id,
+            alias: self.alias,
+            email: self.email,
+            password: password_hash,
+        };
+        Player::update(new_player, conn)
+    }
 }
 
 impl Insertable for NewPlayer {

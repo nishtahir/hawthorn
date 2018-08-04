@@ -1,4 +1,5 @@
-use bcrypt::verify;
+use api::error::ApiError;
+use bcrypt::{hash, verify};
 use db::DbConn;
 use dotenv::dotenv;
 use jsonwebtoken::{decode, Validation};
@@ -26,6 +27,18 @@ pub struct LoginRequest {
 #[derive(Serialize)]
 pub struct LoginResponse {
     token: String,
+}
+
+#[derive(Deserialize)]
+pub struct ChangePasswordRequest {
+    email: String,
+    old_password: String,
+    new_password: String,
+}
+
+#[derive(Serialize)]
+pub struct ChangePasswordResponse {
+    msg: String,
 }
 
 pub struct ApiToken(String);
@@ -76,6 +89,26 @@ pub fn login(req: Json<LoginRequest>, conn: DbConn) -> Result<Json<LoginResponse
         },
         Err(_) => Err(Failure(Status::BadRequest)),
     }
+}
+
+#[put("/password", format = "application/json", data = "<req>")]
+pub fn change_password(
+    req: Json<ChangePasswordRequest>,
+    conn: DbConn,
+) -> Result<Json<ChangePasswordResponse>, ApiError> {
+    let change_password_req = req.into_inner();
+
+    let player = Player::find_by_email(&change_password_req.email, &conn)?;
+    let old_pass_is_valid = verify(&change_password_req.old_password, &player.password)?;
+
+    if old_pass_is_valid {
+        let new_hash = hash(&change_password_req.new_password, /*cost*/ 8)?;
+        let _ = player.update_password(new_hash, &conn);
+    }
+
+    Ok(Json(ChangePasswordResponse {
+        msg: "success".to_string(),
+    }))
 }
 
 fn current_time() -> i64 {
