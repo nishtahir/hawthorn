@@ -11,6 +11,8 @@ const QUOTES: &'static [&'static str] = &[
     "He's ramping! Kill him!",
     "Fog!",
     "TAKE THE GOLD!",
+    "Oh my gosh! He revealed his hand!",
+    "Did you see that swamp he had!?",
 ];
 
 #[derive(Serialize)]
