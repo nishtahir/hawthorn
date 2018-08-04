@@ -1,5 +1,12 @@
-use models::participant::NewParticipant;
+use models::participant::{NewParticipant, Participant};
 use std::collections::HashMap;
+
+#[derive(PartialEq, Clone, Copy, Serialize)]
+pub enum GameOutcome {
+    WIN,
+    LOSE,
+    DRAW,
+}
 
 pub trait Elo
 where
@@ -8,33 +15,99 @@ where
     fn compute_elo(entities: &Vec<Self>) -> Vec<Self>;
 }
 
-impl Elo for NewParticipant {
-    fn compute_elo(entities: &Vec<NewParticipant>) -> Vec<NewParticipant> {
+pub trait Rankable
+where
+    Self: Sized,
+{
+    fn clone(&self, new_elo: f64) -> Self;
+    fn get_unique_id(&self) -> i32;
+    fn get_win(&self) -> bool;
+    fn get_elo(&self) -> f64;
+}
+
+impl Rankable for Participant {
+    fn clone(&self, new_elo: f64) -> Self {
+        Participant {
+            id: self.id,
+            deck_id: self.deck_id,
+            game_id: self.game_id,
+            win: self.win,
+            elo: new_elo,
+        }
+    }
+
+    fn get_unique_id(&self) -> i32 {
+        self.id
+    }
+
+    fn get_win(&self) -> bool {
+        self.win
+    }
+
+    fn get_elo(&self) -> f64 {
+        self.elo
+    }
+}
+
+impl Rankable for NewParticipant {
+    fn clone(&self, new_elo: f64) -> Self {
+        NewParticipant {
+            deck_id: self.deck_id,
+            game_id: self.game_id,
+            win: self.win,
+            elo: new_elo,
+        }
+    }
+    fn get_unique_id(&self) -> i32 {
+        self.deck_id
+    }
+
+    fn get_win(&self) -> bool {
+        self.win
+    }
+
+    fn get_elo(&self) -> f64 {
+        self.elo
+    }
+}
+
+impl<T> Elo for T
+where
+    T: Rankable,
+{
+    fn compute_elo(entities: &Vec<T>) -> Vec<T> {
         let mut transactions = HashMap::new();
-        let win_count = entities.into_iter().filter(|entity| entity.win).count();
+        let win_count = entities
+            .into_iter()
+            .filter(|entity| entity.get_win())
+            .count();
 
         if win_count > 0 {
             for i in entities.into_iter() {
                 for opponent in entities.into_iter() {
-                    if i.deck_id != opponent.deck_id {
+                    if i.get_unique_id() != opponent.get_unique_id() {
                         let expected = expected_score(
-                            transformed_rating(i.elo),
-                            transformed_rating(opponent.elo),
+                            transformed_rating(i.get_elo()),
+                            transformed_rating(opponent.get_elo()),
                         );
 
+                        let i_win = i.get_win();
+                        let i_elo = i.get_elo();
+                        let opponent_win = opponent.get_win();
+
                         // We both won or lost - call it a draw
-                        let new_elo = if i.win && opponent.win {
-                            elo_rating(i.elo, 40.0, GameOutcome::DRAW, expected)
-                        } else if i.win && !opponent.win {
-                            elo_rating(i.elo, 40.0, GameOutcome::WIN, expected)
-                        } else if !i.win && opponent.win {
-                            elo_rating(i.elo, 40.0, GameOutcome::LOSE, expected)
+                        let new_elo = if i_win && opponent_win {
+                            elo_rating(i_elo, 40.0, GameOutcome::DRAW, expected)
+                        } else if i_win && !opponent_win {
+                            elo_rating(i_elo, 40.0, GameOutcome::WIN, expected)
+                        } else if !i_win && opponent_win {
+                            elo_rating(i_elo, 40.0, GameOutcome::LOSE, expected)
                         } else {
-                            i.elo
+                            i_elo
                         };
 
-                        let entry = transactions.entry(i.deck_id).or_insert(0.0);
-                        *entry += (new_elo - i.elo) / (win_count as f64)
+                        let entry = transactions.entry(i.get_unique_id()).or_insert(0.0);
+                        *entry += (new_elo - i_elo) / (win_count as f64)
                     }
                 }
             }
@@ -43,29 +116,15 @@ impl Elo for NewParticipant {
         entities
             .into_iter()
             .map(|entity| {
-                entity
-                    .clone(entity.elo + *transactions.get(&entity.deck_id).unwrap_or(&(0.0 as f64)))
+                entity.clone(
+                    entity.get_elo()
+                        + *transactions
+                            .get(&entity.get_unique_id())
+                            .unwrap_or(&(0.0 as f64)),
+                )
             })
             .collect()
     }
-}
-
-impl NewParticipant {
-    fn clone(&self, new_elo: f64) -> NewParticipant {
-        NewParticipant {
-            deck_id: self.deck_id,
-            game_id: self.game_id,
-            win: self.win,
-            elo: new_elo,
-        }
-    }
-}
-
-#[derive(PartialEq, Clone, Copy, Serialize)]
-pub enum GameOutcome {
-    WIN,
-    LOSE,
-    DRAW,
 }
 
 impl From<GameOutcome> for f64 {

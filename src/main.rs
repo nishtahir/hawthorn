@@ -49,7 +49,8 @@ fn main() {
             routes![
                 api::game::get_games,
                 api::game::get_game,
-                api::game::create_game
+                api::game::create_game,
+                api::game::delete_game
             ],
         )
         .launch();

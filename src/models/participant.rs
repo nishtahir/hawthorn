@@ -6,7 +6,7 @@ use models::Retrievable;
 use schema::game;
 use schema::participant;
 
-#[derive(Identifiable, Queryable, Serialize, Deserialize, Associations, Debug)]
+#[derive(Identifiable, Queryable, Serialize, Deserialize, AsChangeset, Associations, Debug)]
 #[table_name = "participant"]
 #[belongs_to(Game)]
 #[belongs_to(Deck)]
@@ -75,14 +75,26 @@ impl Participant {
         Participant::find_latest_by_deck(&deck, conn)
     }
 
-    pub fn find_by_deck_with_game(
-        deck: &Deck,
-        conn: &SqliteConnection,
-    ) -> QueryResult<Vec<(Participant, Game)>> {
-        Participant::belonging_to(deck)
-            .inner_join(game::table.on(game::id.eq(participant::game_id)))
+    pub fn find_previous(&self, conn: &SqliteConnection) -> QueryResult<Participant> {
+        participant::table
+            .filter(participant::deck_id.eq(self.deck_id))
+            .filter(participant::id.lt(self.id))
             .order(participant::id.desc())
-            .load::<_>(conn)
+            .first(conn)
+    }
+
+    pub fn delete_all(participants: Vec<Participant>, conn: &SqliteConnection) {
+        for p in participants {
+            let _ = diesel::delete(participant::table.find(p.id)).execute(conn);
+        }
+    }
+
+    pub fn update_all(parts: &Vec<Participant>, conn: &SqliteConnection) {
+        for p in parts {
+            let _ = diesel::update(participant::table.find(p.id))
+                .set(p)
+                .execute(conn);
+        }
     }
 }
 

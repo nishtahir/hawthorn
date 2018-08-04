@@ -8,6 +8,8 @@ use models::participant::{NewParticipant, Participant};
 use models::{Insertable, Retrievable};
 use rocket_contrib::Json;
 
+pub const DEFAULT_ELO: f64 = 1000.0;
+
 #[derive(Serialize)]
 struct GameResponse {
     pub id: i32,
@@ -88,7 +90,7 @@ fn create_game(
         .map(|x| {
             let last_elo: f64 = Participant::find_latest_by_deck_id(x.deck_id, &conn)
                 .map(|p| p.elo)
-                .unwrap_or(1000.0);
+                .unwrap_or(DEFAULT_ELO);
 
             NewParticipant {
                 game_id: new_game.id,
@@ -117,4 +119,43 @@ fn create_game(
     };
 
     Ok(Json(response))
+}
+
+#[delete("/<id>")]
+fn delete_game(
+    id: i32,
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<Vec<GameResponse>>, ApiError> {
+    let game = Game::find(id, &conn)?;
+    let participants = Participant::find_by_game(&game, &conn)?;
+
+    Game::delete(id, &conn);
+    Participant::delete_all(participants, &conn);
+
+    let next_games = Game::find_all_after(&game, &conn)?;
+    for g in next_games {
+        let parts_with_previous_elo = Participant::find_by_game(&g, &conn)?
+            .into_iter()
+            .map(|_p| {
+                let previous_elo = _p
+                    .find_previous(&conn)
+                    .map(|it| it.elo)
+                    .unwrap_or(DEFAULT_ELO);
+
+                Participant {
+                    id: _p.id,
+                    game_id: _p.game_id,
+                    deck_id: _p.deck_id,
+                    win: _p.win,
+                    elo: previous_elo,
+                }
+            })
+            .collect();
+
+        let updated = Participant::compute_elo(&parts_with_previous_elo);
+        Participant::update_all(&updated, &conn)
+    }
+
+    get_games(conn, _token)
 }

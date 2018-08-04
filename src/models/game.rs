@@ -51,6 +51,15 @@ impl Insertable for NewGame {
     }
 }
 
+impl Game {
+    pub fn find_all_after(_game: &Game, conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
+        game::table
+            .filter(game::id.gt(_game.id))
+            .order(game::id)
+            .load::<Game>(conn)
+    }
+}
+
 impl NewGame {
     pub fn new(timestamp: &Option<i32>) -> NewGame {
         let millis = match timestamp {
