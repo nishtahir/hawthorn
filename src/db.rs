@@ -8,7 +8,7 @@ use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 use std::ops::Deref;
 
-type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
+pub type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
 
 pub fn init_pool() -> SqlitePool {
     dotenv().ok();

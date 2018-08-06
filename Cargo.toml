@@ -4,13 +4,14 @@ version = "0.1.0"
 authors = ["Nish Tahir <nish.tahir@willowtreeapps.com>"]
 
 [dependencies]
-rocket = "0.3.8"
-rocket_codegen = "0.3.8"
+rocket = "0.3.15"
+rocket_codegen = "0.3.15"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
-diesel = { version = "1.2", features = ["sqlite", "r2d2"] }
-dotenv = "0.10"
+diesel = { version = "1.3.2", features = ["sqlite", "r2d2"] }
+diesel_migrations = "1.3.0"
+dotenv = "0.13"
 time = "0.1"
 bcrypt = "0.2"
 rand = "0.5.4"

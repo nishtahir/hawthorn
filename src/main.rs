@@ -11,6 +11,8 @@ extern crate time;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
+extern crate diesel_migrations;
+#[macro_use]
 extern crate serde_derive;
 extern crate rand;
 
@@ -19,9 +21,26 @@ mod db;
 mod models;
 mod schema;
 
+use db::SqlitePool;
+
+embed_migrations!("./migrations/");
+
 fn main() {
+    let pool = db::init_pool();
+    match pool.get() {
+        Ok(connection) => {
+            let _ = embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+            setup_routes(pool);
+        }
+        Err(error) => {
+            println!("{}", error);
+        }
+    }
+}
+
+fn setup_routes(pool: SqlitePool) {
     rocket::ignite()
-        .manage(db::init_pool())
+        .manage(pool)
         .mount("/", routes![api::index::index])
         .mount(
             "/auth",
