@@ -8,6 +8,8 @@ pub enum GameOutcome {
     DRAW,
 }
 
+pub const DEFAULT_IMPACT: f64 = 40.0;
+
 pub trait Elo
 where
     Self: Sized,
@@ -37,7 +39,7 @@ impl Rankable for Participant {
     }
 
     fn get_unique_id(&self) -> i32 {
-        self.id
+        self.deck_id
     }
 
     fn get_win(&self) -> bool {
@@ -93,15 +95,16 @@ where
 
                         let i_win = i.get_win();
                         let i_elo = i.get_elo();
+
                         let opponent_win = opponent.get_win();
 
-                        // We both won or lost - call it a draw
+                        // We both won call it a draw
                         let new_elo = if i_win && opponent_win {
-                            elo_rating(i_elo, 40.0, GameOutcome::DRAW, expected)
+                            elo_rating(i_elo, GameOutcome::DRAW, expected)
                         } else if i_win && !opponent_win {
-                            elo_rating(i_elo, 40.0, GameOutcome::WIN, expected)
+                            elo_rating(i_elo, GameOutcome::WIN, expected)
                         } else if !i_win && opponent_win {
-                            elo_rating(i_elo, 40.0, GameOutcome::LOSE, expected)
+                            elo_rating(i_elo, GameOutcome::LOSE, expected)
                         } else {
                             i_elo
                         };
@@ -149,8 +152,8 @@ fn transformed_rating(rating: f64) -> f64 {
     (10.0_f64).powf(rating / 400.0)
 }
 
-fn elo_rating(current_rating: f64, impact: f64, outcome: GameOutcome, expected_score: f64) -> f64 {
-    current_rating + impact * (f64::from(outcome) - expected_score)
+fn elo_rating(current_rating: f64, outcome: GameOutcome, expected_score: f64) -> f64 {
+    current_rating + DEFAULT_IMPACT * (f64::from(outcome) - expected_score)
 }
 
 #[cfg(test)]
@@ -161,17 +164,17 @@ mod tests {
     #[test]
     fn test_elo_rating() {
         assert_eq!{
-            elo_rating(1000.0, 40.0, GameOutcome::WIN, expected_score(1000.0, 1000.0)),
+            elo_rating(1000.0, GameOutcome::WIN, expected_score(1000.0, 1000.0)),
             1020.0
         }
 
         assert_eq!{
-            elo_rating(1000.0, 40.0, GameOutcome::LOSE, expected_score(1000.0, 1000.0)),
+            elo_rating(1000.0, GameOutcome::LOSE, expected_score(1000.0, 1000.0)),
             980.0
         }
 
         assert_eq!{
-            elo_rating(1000.0, 40.0, GameOutcome::DRAW, expected_score(1000.0, 1000.0)),
+            elo_rating(1000.0, GameOutcome::DRAW, expected_score(1000.0, 1000.0)),
             1000.0
         }
     }
@@ -274,5 +277,41 @@ mod tests {
         assert_eq!(result[1].elo, 793.3145076104151);
         assert_eq!(result[2].elo, 695.9437611556393);
         assert_eq!(result[3].elo, 744.7678746182022);
+    }
+
+    #[test]
+    fn test_compute_elo_with_4_participants_and_1_winner() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, false, 1005.84301848691),
+            NewParticipant::new(0, 2, true, 1115.24769033892),
+            NewParticipant::new(0, 3, false, 861.083933121132),
+            NewParticipant::new(0, 4, false, 976.272195229627),
+        ];
+
+        let result = NewParticipant::compute_elo(&test_case);
+
+        assert_eq!(result[0].elo, 991.9406370569111);
+        assert_eq!(result[1].elo, 1149.0708727628635);
+        assert_eq!(result[2].elo, 853.564090777122);
+        assert_eq!(result[3].elo, 963.8712365796924);
+    }
+
+    #[test]
+    fn test_compute_elo_with_5_participants_and_1_winner() {
+        let test_case = vec![
+            NewParticipant::new(0, 1, false, 1005.84301848691),
+            NewParticipant::new(0, 2, true, 1115.24769033892),
+            NewParticipant::new(0, 3, false, 861.083933121132),
+            NewParticipant::new(0, 4, false, 976.272195229627),
+            NewParticipant::new(0, 5, false, 954.114406112793),
+        ];
+
+        let result = NewParticipant::compute_elo(&test_case);
+
+        assert_eq!(result[0].elo, 991.9406370569111);
+        assert_eq!(result[1].elo, 1160.407691064819);
+        assert_eq!(result[2].elo, 853.564090777122);
+        assert_eq!(result[3].elo, 963.8712365796924);
+        assert_eq!(result[4].elo, 942.7775878108375);
     }
 }
