@@ -21,6 +21,11 @@ mod db;
 mod models;
 mod schema;
 
+use api::auth::*;
+use api::deck::*;
+use api::error::*;
+use api::game::*;
+use api::player::*;
 use db::SqlitePool;
 
 embed_migrations!("./migrations/");
@@ -42,38 +47,26 @@ fn setup_routes(pool: SqlitePool) {
     rocket::ignite()
         .manage(pool)
         .mount("/", routes![api::index::index])
-        .mount(
-            "/auth",
-            routes![api::auth::login, api::auth::change_password],
-        )
+        .mount("/auth", routes![login, change_password])
         .mount(
             "/players",
-            routes![
-                api::player::get_players,
-                api::player::get_player,
-                api::player::create_player,
-                api::player::update_player
-            ],
+            routes![get_players, get_player, create_player, update_player],
         )
         .mount(
             "/decks",
             routes![
-                api::deck::get_decks,
-                api::deck::get_deck,
-                api::deck::create_deck,
-                api::deck::update_deck,
-                api::deck::get_leaderboard,
-                api::deck::get_pods
+                get_decks,
+                get_deck,
+                create_deck,
+                update_deck,
+                get_leaderboard,
+                get_pods
             ],
         )
         .mount(
             "/games",
-            routes![
-                api::game::get_games,
-                api::game::get_game,
-                api::game::create_game,
-                api::game::delete_game
-            ],
+            routes![get_games, get_game, create_game, delete_game],
         )
+        .catch(catchers![handle_404, handle_401, handle_400,])
         .launch();
 }

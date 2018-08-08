@@ -1,14 +1,14 @@
 use models::participant::{NewParticipant, Participant};
 use std::collections::HashMap;
 
+pub const DEFAULT_IMPACT: f64 = 40.0;
+
 #[derive(PartialEq, Clone, Copy, Serialize)]
 pub enum GameOutcome {
     WIN,
     LOSE,
     DRAW,
 }
-
-pub const DEFAULT_IMPACT: f64 = 40.0;
 
 pub trait Elo
 where

@@ -12,6 +12,13 @@ pub enum ApiError {
     NotFound,
     BadRequest,
     InternalServerError,
+    Unauthorized,
+}
+
+#[derive(Serialize)]
+pub struct ErrorResponse {
+    code: u16,
+    message: String,
 }
 
 impl From<DieselError> for ApiError {
@@ -37,14 +44,9 @@ impl From<ApiError> for Status {
             ApiError::NotFound => Status::NotFound,
             ApiError::BadRequest => Status::BadRequest,
             ApiError::InternalServerError => Status::InternalServerError,
+            ApiError::Unauthorized => Status::Unauthorized,
         }
     }
-}
-
-#[derive(Serialize)]
-struct ErrorResponse {
-    code: u16,
-    message: String,
 }
 
 impl From<Status> for ErrorResponse {
@@ -69,4 +71,25 @@ impl<'r> Responder<'r> for ApiError {
             Err(_) => Err(Status::InternalServerError),
         }
     }
+}
+
+///
+///  These catchers are needed in order to provide a custom
+///  error response for request guards. Ideally we should be
+///  able to remove these as of Rocket 0.4
+///  Ref: https://github.com/SergioBenitez/Rocket/issues/596
+///
+#[catch(400)]
+pub fn handle_400(_: &Request) -> Json<ErrorResponse> {
+    Json(ErrorResponse::from(Status::BadRequest))
+}
+
+#[catch(401)]
+pub fn handle_401(_: &Request) -> Json<ErrorResponse> {
+    Json(ErrorResponse::from(Status::Unauthorized))
+}
+
+#[catch(404)]
+pub fn handle_404(_: &Request) -> Json<ErrorResponse> {
+    Json(ErrorResponse::from(Status::NotFound))
 }
