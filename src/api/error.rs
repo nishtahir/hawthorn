@@ -1,5 +1,6 @@
 use bcrypt::BcryptError;
 use diesel::result::Error as DieselError;
+use jsonwebtoken::errors::Error as JwtError;
 use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
@@ -32,6 +33,14 @@ impl From<DieselError> for ApiError {
 
 impl From<BcryptError> for ApiError {
     fn from(e: BcryptError) -> Self {
+        match e {
+            _ => ApiError::InternalServerError,
+        }
+    }
+}
+
+impl From<JwtError> for ApiError {
+    fn from(e: JwtError) -> Self {
         match e {
             _ => ApiError::InternalServerError,
         }

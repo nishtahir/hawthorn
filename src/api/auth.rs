@@ -7,11 +7,12 @@ use jsonwebtoken::{encode, Header};
 use models::player::Player;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
-use rocket::response::Failure;
 use rocket::Outcome;
 use rocket_contrib::Json;
 use std::env;
 use time;
+
+pub const DEFAULT_TOKEN_VALIDITY: i64 = 604800; // 7 days
 
 #[derive(Serialize, Deserialize)]
 pub struct Claims {
@@ -34,11 +35,6 @@ pub struct ChangePasswordRequest {
     email: String,
     old_password: String,
     new_password: String,
-}
-
-#[derive(Serialize)]
-pub struct ChangePasswordResponse {
-    msg: String,
 }
 
 pub struct ApiToken(String);
@@ -65,37 +61,26 @@ impl<'a, 'r> FromRequest<'a, 'r> for ApiToken {
 }
 
 #[post("/login", format = "application/json", data = "<req>")]
-pub fn login(req: Json<LoginRequest>, conn: DbConn) -> Result<Json<LoginResponse>, Failure> {
+pub fn login(req: Json<LoginRequest>, conn: DbConn) -> Result<Json<LoginResponse>, ApiError> {
     dotenv().ok();
     let secret = env::var("AUTH_SECRET").expect("AUTH_SECRET must be set");
     let login_req = req.into_inner();
-    match Player::find_by_email(&login_req.email, &conn) {
-        Ok(player) => match verify(&login_req.password, &player.password) {
-            Ok(success) => {
-                if success {
-                    let claims = Claims {
-                        id: player.id.to_string(),
-                        exp: current_time() + 604800, // + 7 days
-                    };
-                    match encode(&Header::default(), &claims, secret.as_ref()) {
-                        Ok(token) => Ok(Json(LoginResponse { token })),
-                        Err(_) => Err(Failure(Status::InternalServerError)),
-                    }
-                } else {
-                    Err(Failure(Status::Unauthorized))
-                }
-            }
-            Err(_) => Err(Failure(Status::InternalServerError)),
-        },
-        Err(_) => Err(Failure(Status::BadRequest)),
+    let player = Player::find_by_email(&login_req.email, &conn)?;
+    let is_match = verify(&login_req.password, &player.password)?;
+    if is_match {
+        let claims = Claims {
+            id: player.id.to_string(),
+            exp: current_time() + DEFAULT_TOKEN_VALIDITY,
+        };
+        let token = encode(&Header::default(), &claims, secret.as_ref())?;
+        Ok(Json(LoginResponse { token }))
+    } else {
+        Err(ApiError::Unauthorized)
     }
 }
 
 #[put("/password", format = "application/json", data = "<req>")]
-pub fn change_password(
-    req: Json<ChangePasswordRequest>,
-    conn: DbConn,
-) -> Result<Json<ChangePasswordResponse>, ApiError> {
+pub fn change_password(req: Json<ChangePasswordRequest>, conn: DbConn) -> Result<(), ApiError> {
     let change_password_req = req.into_inner();
 
     let player = Player::find_by_email(&change_password_req.email, &conn)?;
@@ -104,11 +89,10 @@ pub fn change_password(
     if old_pass_is_valid {
         let new_hash = hash(&change_password_req.new_password, /*cost*/ 8)?;
         let _ = player.update_password(new_hash, &conn);
+        Ok({})
+    } else {
+        Err(ApiError::Unauthorized)
     }
-
-    Ok(Json(ChangePasswordResponse {
-        msg: "success".to_string(),
-    }))
 }
 
 fn current_time() -> i64 {
