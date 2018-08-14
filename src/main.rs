@@ -10,6 +10,8 @@ extern crate diesel_migrations;
 extern crate dotenv;
 extern crate jsonwebtoken;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate log;
 extern crate log4rs;
 extern crate rand;
@@ -54,7 +56,7 @@ fn setup_routes(pool: SqlitePool) {
     rocket::ignite()
         .manage(pool)
         .mount("/", routes![api::index::index])
-        .mount("/auth", routes![login, change_password])
+        .mount("/auth", routes![login, change_password, refresh_token])
         .mount(
             "/players",
             routes![get_players, get_player, create_player, update_player],

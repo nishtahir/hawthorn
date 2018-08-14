@@ -34,8 +34,17 @@ table! {
     }
 }
 
+table! {
+    token (id) {
+        id -> Integer,
+        player_id -> Integer,
+        web_token -> Text,
+    }
+}
+
 joinable!(deck -> player (player_id));
 joinable!(participant -> deck (deck_id));
 joinable!(participant -> game (game_id));
+joinable!(token -> player (player_id));
 
-allow_tables_to_appear_in_same_query!(deck, game, participant, player,);
+allow_tables_to_appear_in_same_query!(deck, game, participant, player, token,);

@@ -42,6 +42,11 @@ struct PodReqestParam {
     players: Vec<i32>,
 }
 
+///
+/// We need this in order to have a variable number of player_id parameters
+/// in the request. This looks through the request parameters and populates
+/// a Vec with matching keys
+///
 impl<'f> request::FromForm<'f> for PodReqestParam {
     type Error = ApiError;
 
