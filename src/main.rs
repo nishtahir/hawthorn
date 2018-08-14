@@ -3,18 +3,21 @@
 #![allow(proc_macro_derive_resolution_fallback)] // This can be removed after diesel-1.4
 
 extern crate bcrypt;
-extern crate dotenv;
-extern crate jsonwebtoken;
-extern crate rocket;
-extern crate rocket_contrib;
-extern crate time;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
+extern crate dotenv;
+extern crate jsonwebtoken;
+#[macro_use]
+extern crate log;
+extern crate log4rs;
+extern crate rand;
+extern crate rocket;
+extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
-extern crate rand;
+extern crate time;
 
 mod api;
 mod db;
@@ -31,14 +34,18 @@ use db::SqlitePool;
 embed_migrations!("./migrations/");
 
 fn main() {
+    let _ = log4rs::init_file("config/log.yaml", Default::default()).unwrap();
+    info!("Hawthorn is starting up...");
+
     let pool = db::init_pool();
     match pool.get() {
         Ok(connection) => {
+            info!("Running database migrations...");
             let _ = embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
             setup_routes(pool);
         }
-        Err(error) => {
-            println!("{}", error);
+        Err(_) => {
+            error!("Failed to aquire database connection");
         }
     }
 }
