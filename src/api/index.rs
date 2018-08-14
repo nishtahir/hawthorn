@@ -13,6 +13,9 @@ const QUOTES: &'static [&'static str] = &[
     "TAKE THE GOLD!",
     "Oh my gosh! He revealed his hand!",
     "Did you see that swamp he had!?",
+    "It's an AD!",
+    "Ob Nixilis Reignited: He was on fire before, and he's on fire again",
+    "Hmmmmm... Hmmm... Ponder...",
 ];
 
 #[derive(Serialize)]
