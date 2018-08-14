@@ -1,5 +1,6 @@
 use api::auth::ApiToken;
 use api::error::ApiError;
+use api::game::DEFAULT_ELO;
 use db::DbConn;
 use models::deck::{Deck, NewDeck};
 use models::participant::Participant;
@@ -67,7 +68,7 @@ impl DeckResponse {
             active: deck.active,
             games: participations.len() as i32,
             wins: participations.iter().filter(|&p| p.win == true).count() as i32,
-            elo: participations.first().map_or(1000.0, |p| p.elo),
+            elo: participations.first().map_or(DEFAULT_ELO, |p| p.elo),
         }
     }
 }
@@ -113,7 +114,7 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
             active: deck.active,
             games: participations.len() as i32,
             wins: participations.iter().filter(|(p, _)| p.win == true).count() as i32,
-            elo: participations.first().map_or(1000.0, |(p, _)| p.elo),
+            elo: participations.first().map_or(DEFAULT_ELO, |(p, _)| p.elo),
         })
         .take(20)
         .collect::<Vec<DeckResponse>>();
@@ -160,7 +161,7 @@ fn create_deck(
         active: deck.active,
         games: 0,
         wins: 0,
-        elo: 1000.0,
+        elo: DEFAULT_ELO,
     };
 
     Ok(Json(response))
@@ -174,13 +175,15 @@ fn update_deck(
 ) -> Result<Json<DeckResponse>, ApiError> {
     let update_deck_request = req.into_inner();
 
-    let _deck = Deck::find(update_deck_request.id, &conn)?;
+    let current_deck = Deck::find(update_deck_request.id, &conn)?;
     let new_deck = Deck {
-        id: _deck.id,
-        alias: update_deck_request.alias.unwrap_or(_deck.alias),
-        commander: update_deck_request.commander.unwrap_or(_deck.commander),
-        player_id: _deck.player_id,
-        active: update_deck_request.active.unwrap_or(_deck.active),
+        id: current_deck.id,
+        alias: update_deck_request.alias.unwrap_or(current_deck.alias),
+        commander: update_deck_request
+            .commander
+            .unwrap_or(current_deck.commander),
+        player_id: current_deck.player_id,
+        active: update_deck_request.active.unwrap_or(current_deck.active),
     };
 
     let deck = Deck::update(new_deck, &conn)?;
