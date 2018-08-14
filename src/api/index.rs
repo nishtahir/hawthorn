@@ -16,6 +16,9 @@ const QUOTES: &'static [&'static str] = &[
     "It's an AD!",
     "Ob Nixilis Reignited: He was on fire before, and he's on fire again",
     "Hmmmmm... Hmmm... Ponder...",
+    "Wait...can I re-do this turn?",
+    "I'm not trying to win",
+    "I now have infinite life"
 ];
 
 #[derive(Serialize)]
