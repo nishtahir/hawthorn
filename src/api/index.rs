@@ -18,7 +18,7 @@ const QUOTES: &'static [&'static str] = &[
     "Hmmmmm... Hmmm... Ponder...",
     "Wait...can I re-do this turn?",
     "I'm not trying to win",
-    "I now have infinite life"
+    "I now have infinite life",
 ];
 
 #[derive(Serialize)]

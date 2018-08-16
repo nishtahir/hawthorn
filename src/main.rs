@@ -32,11 +32,15 @@ use api::error::*;
 use api::game::*;
 use api::player::*;
 use db::SqlitePool;
+use dotenv::dotenv;
+use std::env;
 
 embed_migrations!("./migrations/");
 
 fn main() {
-    let _ = log4rs::init_file("config/log.yaml", Default::default()).unwrap();
+    dotenv().ok();
+    let log_config = env::var("LOG_CONFIG_PATH").expect("LOG_CONFIG_PATH must be set");
+    let _ = log4rs::init_file(log_config, Default::default()).unwrap();
     info!("Hawthorn is starting up...");
 
     let pool = db::init_pool();
