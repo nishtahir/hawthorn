@@ -35,6 +35,7 @@ struct DeckResponse {
     active: bool,
     games: i32,
     wins: i32,
+    win_percentage: f64,
     elo: f64,
 }
 
@@ -67,14 +68,23 @@ impl<'f> request::FromForm<'f> for PodReqestParam {
 
 impl DeckResponse {
     fn new(deck: Deck, participations: Vec<Participant>) -> DeckResponse {
+        let games = participations.len() as i32;
+        let wins = participations.iter().filter(|&p| p.win == true).count() as i32;
+        let win_percentage = if games > 0 {
+            wins as f64 / games as f64
+        } else {
+            0.0
+        };
+
         DeckResponse {
             id: deck.id,
             alias: deck.alias,
             player_id: deck.player_id,
             commander: deck.commander,
             active: deck.active,
-            games: participations.len() as i32,
-            wins: participations.iter().filter(|&p| p.win == true).count() as i32,
+            games: games,
+            wins: wins,
+            win_percentage: win_percentage,
             elo: participations.first().map_or(DEFAULT_ELO, |p| p.elo),
         }
     }
@@ -114,15 +124,9 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
                 .fold(0.0, f64::max);
             participations.len() > 5 && max_time > time_four_weeks_ago
         })
-        .map(|(deck, participations)| DeckResponse {
-            id: deck.id,
-            alias: deck.alias,
-            commander: deck.commander,
-            player_id: deck.player_id,
-            active: deck.active,
-            games: participations.len() as i32,
-            wins: participations.iter().filter(|(p, _)| p.win == true).count() as i32,
-            elo: participations.first().map_or(DEFAULT_ELO, |(p, _)| p.elo),
+        .map(|(deck, participations)| {
+            let (parts, _): (Vec<_>, Vec<_>) = participations.into_iter().unzip();
+            DeckResponse::new(deck, parts)
         })
         .take(20)
         .collect::<Vec<DeckResponse>>();
@@ -170,6 +174,7 @@ fn create_deck(
         active: deck.active,
         games: 0,
         wins: 0,
+        win_percentage: 0.0,
         elo: DEFAULT_ELO,
     };
 
