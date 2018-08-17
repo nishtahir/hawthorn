@@ -1,4 +1,5 @@
 use api::auth::ApiToken;
+use api::deck::DeckResponse;
 use api::error::ApiError;
 use bcrypt::hash;
 use db::DbConn;
@@ -6,7 +7,6 @@ use models::deck::Deck;
 use models::player::{NewPlayer, Player};
 use models::{Insertable, Retrievable};
 use rocket_contrib::Json;
-
 #[derive(Deserialize)]
 pub struct CreatePlayerRequest {
     alias: String,
@@ -31,7 +31,7 @@ pub struct PlayerResponse {
 pub struct PlayerDetailResponse {
     id: i32,
     alias: String,
-    decks: Vec<Deck>,
+    decks: Vec<DeckResponse>,
 }
 
 #[post("/", format = "application/json", data = "<req>")]
@@ -65,15 +65,17 @@ fn get_players(
     _token: ApiToken,
 ) -> Result<Json<Vec<PlayerDetailResponse>>, ApiError> {
     let players = Player::all(&conn)?;
+    let mut response = vec![];
 
-    let response = Deck::all_decks_grouped_by_player(players, &conn)?
-        .into_iter()
-        .map(|(player, decks)| PlayerDetailResponse {
+    for (player, decks) in Deck::all_decks_grouped_by_player(players, &conn)? {
+        let deck_response = DeckResponse::into_deck_response(decks, &conn)?;
+        response.push(PlayerDetailResponse {
             id: player.id,
             alias: player.alias,
-            decks: decks,
-        })
-        .collect();
+            decks: deck_response,
+        });
+    }
+
     Ok(Json(response))
 }
 
@@ -89,7 +91,7 @@ pub fn get_player(
     let response = PlayerDetailResponse {
         id: player.id,
         alias: player.alias,
-        decks: decks,
+        decks: DeckResponse::into_deck_response(decks, &conn)?,
     };
 
     Ok(Json(response))

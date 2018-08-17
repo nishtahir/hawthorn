@@ -27,7 +27,7 @@ struct UpdateDeckRequest {
 }
 
 #[derive(Serialize)]
-struct DeckResponse {
+pub struct DeckResponse {
     id: i32,
     alias: String,
     commander: String,
@@ -67,7 +67,7 @@ impl<'f> request::FromForm<'f> for PodReqestParam {
 }
 
 impl DeckResponse {
-    fn new(deck: Deck, participations: Vec<Participant>) -> DeckResponse {
+    pub fn new(deck: Deck, participations: Vec<Participant>) -> DeckResponse {
         let games = participations.len() as i32;
         let wins = participations.iter().filter(|&p| p.win == true).count() as i32;
         let win_percentage = if games > 0 {
@@ -87,6 +87,17 @@ impl DeckResponse {
             win_percentage: win_percentage,
             elo: participations.first().map_or(DEFAULT_ELO, |p| p.elo),
         }
+    }
+
+    pub fn into_deck_response(
+        decks: Vec<Deck>,
+        conn: &DbConn,
+    ) -> Result<Vec<DeckResponse>, ApiError> {
+        let participants = Participant::all_grouped_by_deck(decks, &conn)?;
+        Ok(participants
+            .into_iter()
+            .map(|(deck, participations)| DeckResponse::new(deck, participations))
+            .collect())
     }
 }
 
