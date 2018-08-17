@@ -126,7 +126,7 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
     let decks = Deck::all(&conn)?;
     let query_result = Participant::all_by_deck_join_game(decks, &conn)?;
     let time_four_weeks_ago = current_time() - 2419200.0; /*four weeks*/
-    let mut response = query_result
+    let mut leaderboard = query_result
         .into_iter()
         .filter(|(_, participations)| {
             let max_time = participations
@@ -139,10 +139,14 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
             let (parts, _): (Vec<_>, Vec<_>) = participations.into_iter().unzip();
             DeckResponse::new(deck, parts)
         })
+        .collect::<Vec<DeckResponse>>();
+
+    leaderboard.sort_by(|a, b| b.elo.partial_cmp(&a.elo).unwrap_or(Ordering::Less));
+    let response = leaderboard
+        .into_iter()
         .take(20)
         .collect::<Vec<DeckResponse>>();
 
-    response.sort_by(|a, b| b.elo.partial_cmp(&a.elo).unwrap_or(Ordering::Less));
     Ok(Json(response))
 }
 
