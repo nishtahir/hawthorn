@@ -37,6 +37,7 @@ pub struct DeckResponse {
     wins: i32,
     win_percentage: f64,
     elo: f64,
+    elo_delta: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -76,6 +77,9 @@ impl DeckResponse {
             0.0
         };
 
+        let current_elo = participations.first().map_or(DEFAULT_ELO, |p| p.elo);
+        let previous_elo = participations.get(1).map_or(0.0, |p| p.elo);
+
         DeckResponse {
             id: deck.id,
             alias: deck.alias,
@@ -85,7 +89,8 @@ impl DeckResponse {
             games: games,
             wins: wins,
             win_percentage: win_percentage,
-            elo: participations.first().map_or(DEFAULT_ELO, |p| p.elo),
+            elo: current_elo,
+            elo_delta: current_elo - previous_elo,
         }
     }
 
@@ -142,6 +147,7 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
         .collect::<Vec<DeckResponse>>();
 
     leaderboard.sort_by(|a, b| b.elo.partial_cmp(&a.elo).unwrap_or(Ordering::Less));
+
     let response = leaderboard
         .into_iter()
         .take(20)
@@ -191,6 +197,7 @@ fn create_deck(
         wins: 0,
         win_percentage: 0.0,
         elo: DEFAULT_ELO,
+        elo_delta: 0.0,
     };
 
     Ok(Json(response))
