@@ -138,7 +138,7 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
                 .iter()
                 .map(|(_, g)| g.time_stamp)
                 .fold(0.0, f64::max);
-            participations.len() > 5 && max_time > time_four_weeks_ago
+            participations.len() >= 5 && max_time > time_four_weeks_ago
         })
         .map(|(deck, participations)| {
             let (parts, _): (Vec<_>, Vec<_>) = participations.into_iter().unzip();
