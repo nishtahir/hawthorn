@@ -27,6 +27,7 @@ struct GameDetailResponse {
 struct ParticipantResponse {
     deck_id: i32,
     elo: f64,
+    previous_elo: f64,
 }
 
 #[derive(Deserialize)]
@@ -60,9 +61,13 @@ fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameDetailRe
     let participants = Participant::find_by_game(&game, &conn)?;
     let participant_response = participants
         .into_iter()
-        .map(|p| ParticipantResponse {
-            deck_id: p.deck_id,
-            elo: p.elo,
+        .map(|p| {
+            let previous_elo = p.find_previous(&conn).ok().map_or(DEFAULT_ELO, |p| p.elo);
+            ParticipantResponse {
+                deck_id: p.deck_id,
+                elo: p.elo,
+                previous_elo: previous_elo,
+            }
         })
         .collect();
 
@@ -88,7 +93,7 @@ fn create_game(
         .participants
         .into_iter()
         .map(|x| {
-            let last_elo: f64 = Participant::find_latest_by_deck_id(x.deck_id, &conn)
+            let current_elo: f64 = Participant::find_latest_by_deck_id(x.deck_id, &conn)
                 .map(|p| p.elo)
                 .unwrap_or(DEFAULT_ELO);
 
@@ -96,7 +101,7 @@ fn create_game(
                 game_id: new_game.id,
                 deck_id: x.deck_id,
                 win: x.win,
-                elo: last_elo,
+                elo: current_elo,
             }
         })
         .collect();
@@ -106,9 +111,16 @@ fn create_game(
 
     let rankings = participants
         .into_iter()
-        .map(|ranking| ParticipantResponse {
-            deck_id: ranking.deck_id,
-            elo: ranking.elo,
+        .map(|ranking| {
+            let previous_elo = ranking
+                .find_previous(&conn)
+                .ok()
+                .map_or(DEFAULT_ELO, |p| p.elo);
+            ParticipantResponse {
+                deck_id: ranking.deck_id,
+                elo: ranking.elo,
+                previous_elo: previous_elo,
+            }
         })
         .collect();
 

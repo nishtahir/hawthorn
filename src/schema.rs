@@ -38,7 +38,7 @@ table! {
     token (id) {
         id -> Integer,
         player_id -> Integer,
-        web_token -> Text,
+        content -> Text,
     }
 }
 
