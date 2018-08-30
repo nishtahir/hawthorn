@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use models::deck::Deck;
 use models::game::Game;
 use models::Retrievable;
+use schema::deck;
 use schema::game;
 use schema::participant;
 
@@ -78,7 +79,7 @@ impl Participant {
     pub fn find_previous(&self, conn: &SqliteConnection) -> QueryResult<Participant> {
         participant::table
             .filter(participant::deck_id.eq(self.deck_id))
-            .filter(participant::id.lt(self.id))
+            .filter(participant::game_id.lt(self.game_id))
             .order(participant::id.desc())
             .first(conn)
     }
@@ -95,6 +96,18 @@ impl Participant {
                 .set(p)
                 .execute(conn);
         }
+    }
+
+    pub fn latest_by_deck_id_before_game(
+        deck_id: i32,
+        game: &Game,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Participant> {
+        participant::table
+            .filter(participant::deck_id.eq(deck_id))
+            .filter(participant::game_id.lt(game.id))
+            .order(participant::id.desc())
+            .first(conn)
     }
 }
 

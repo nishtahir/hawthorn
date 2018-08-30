@@ -4,3 +4,6 @@
 
 # Database
 *.sqlite
+
+# MacOS
+.DS_Store
