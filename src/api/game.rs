@@ -37,6 +37,13 @@ struct GameRequest {
 }
 
 #[derive(Deserialize)]
+struct EditGameRequest {
+    id: i32,
+    timestamp: Option<i32>,
+    participants: Vec<ParticipantRequest>,
+}
+
+#[derive(Deserialize)]
 struct ParticipantRequest {
     pub deck_id: i32,
     pub win: bool,
@@ -145,6 +152,48 @@ fn delete_game(
     Game::delete(id, &conn);
     Participant::delete_all(participants, &conn);
 
+    refresh_elo_after(&game, &conn);
+
+    get_games(conn, _token)
+}
+
+#[put("/", format = "application/json", data = "<req>")]
+fn update_game(
+    req: Json<EditGameRequest>,
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<GameDetailResponse>, ApiError> {
+    let request = req.into_inner();
+    let game = Game::find(request.id, &conn)?;
+
+    let mut new_participants = vec![];
+    for p in request.participants {
+        let latest_elo_before_game = Participant::latest_by_deck_id_before_game(
+            p.deck_id, &game, &conn,
+        ).map(|p| p.elo)
+            .unwrap_or(1000.0);
+
+        let new_p = NewParticipant {
+            game_id: game.id,
+            deck_id: p.deck_id,
+            win: p.win,
+            elo: latest_elo_before_game,
+        };
+        new_participants.push(new_p)
+    }
+
+    let participants = Participant::find_by_game(&game, &conn)?;
+    Participant::delete_all(participants, &conn);
+    let _ = NewParticipant::insert(&new_participants, &conn);
+
+    let previous_game = game.find_previous(&conn).unwrap_or(game);
+
+    let _ = refresh_elo_after(&previous_game, &conn)?;
+
+    get_game(request.id, conn, _token)
+}
+
+fn refresh_elo_after(game: &Game, conn: &DbConn) -> Result<(), ApiError> {
     let next_games = Game::find_all_after(&game, &conn)?;
     for g in next_games {
         let parts_with_previous_elo = Participant::find_by_game(&g, &conn)?
@@ -166,8 +215,7 @@ fn delete_game(
             .collect();
 
         let updated = Participant::compute_elo(&parts_with_previous_elo);
-        Participant::update_all(&updated, &conn)
+        Participant::update_all(&updated, &conn);
     }
-
-    get_games(conn, _token)
+    Ok({})
 }

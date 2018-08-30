@@ -58,6 +58,13 @@ impl Game {
             .order(game::id)
             .load::<Game>(conn)
     }
+
+    pub fn find_previous(&self, conn: &SqliteConnection) -> QueryResult<Game> {
+        game::table
+            .filter(game::id.lt(self.id))
+            .order(game::id.desc())
+            .first(conn)
+    }
 }
 
 impl NewGame {
