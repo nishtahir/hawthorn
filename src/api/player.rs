@@ -5,8 +5,8 @@ use bcrypt::hash;
 use db::DbConn;
 use models::deck::Deck;
 use models::player::{NewPlayer, Player};
-use models::{Insertable, Retrievable};
 use rocket_contrib::Json;
+
 #[derive(Deserialize)]
 pub struct CreatePlayerRequest {
     alias: String,
@@ -34,29 +34,34 @@ pub struct PlayerDetailResponse {
     decks: Vec<DeckResponse>,
 }
 
-#[post("/", format = "application/json", data = "<req>")]
+impl Player {
+    fn into_player_response(self) -> PlayerResponse {
+        PlayerResponse {
+            id: self.id,
+            alias: self.alias,
+        }
+    }
+}
+
+impl CreatePlayerRequest {
+    fn into_new_player(self) -> Result<NewPlayer, ApiError> {
+        Ok(NewPlayer {
+            alias: self.alias,
+            email: self.email,
+            password: hash(&self.password, /*cost*/ 8)?,
+        })
+    }
+}
+
+#[post("/", format = "application/json", data = "<json>")]
 pub fn create_player(
-    req: Json<CreatePlayerRequest>,
+    json: Json<CreatePlayerRequest>,
     conn: DbConn,
 ) -> Result<Json<PlayerResponse>, ApiError> {
-    let create_player_req = req.into_inner();
+    let req = json.into_inner();
+    let new_player = NewPlayer::insert(req.into_new_player()?, &conn);
 
-    let hash = hash(&create_player_req.password, /*cost*/ 8)?;
-
-    let new_player = NewPlayer {
-        alias: create_player_req.alias,
-        email: create_player_req.email,
-        password: hash,
-    };
-
-    let response = NewPlayer::insert(new_player, &conn).map(|player| {
-        Json(PlayerResponse {
-            id: player.id,
-            alias: player.alias,
-        })
-    })?;
-
-    Ok(response)
+    Ok(Json(new_player?.into_player_response()))
 }
 
 #[get("/")]
@@ -65,9 +70,10 @@ fn get_players(
     _token: ApiToken,
 ) -> Result<Json<Vec<PlayerDetailResponse>>, ApiError> {
     let players = Player::all(&conn)?;
-    let mut response = vec![];
+    let decks_by_players = Deck::find_by_players(players, &conn)?;
 
-    for (player, decks) in Deck::all_decks_grouped_by_player(players, &conn)? {
+    let mut response = vec![];
+    for (player, decks) in decks_by_players {
         let deck_response = DeckResponse::into_deck_response(decks, &conn)?;
         response.push(PlayerDetailResponse {
             id: player.id,
@@ -85,7 +91,7 @@ pub fn get_player(
     conn: DbConn,
     _token: ApiToken,
 ) -> Result<Json<PlayerDetailResponse>, ApiError> {
-    let player = Player::find(id, &conn)?;
+    let player = Player::find_by_id(id, &conn)?;
     let decks = Deck::find_by_player(&player, &conn)?;
 
     let response = PlayerDetailResponse {
@@ -105,7 +111,7 @@ pub fn update_player(
 ) -> Result<Json<PlayerResponse>, ApiError> {
     let update_request = req.into_inner();
 
-    let old_player = Player::find(update_request.id, &conn)?;
+    let old_player = Player::find_by_id(update_request.id, &conn)?;
     let new_player = Player::update(
         Player {
             id: old_player.id,

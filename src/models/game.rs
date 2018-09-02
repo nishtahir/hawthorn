@@ -1,6 +1,5 @@
 use diesel;
 use diesel::prelude::*;
-use models::{Insertable, Retrievable};
 use schema::game;
 use time;
 
@@ -18,43 +17,33 @@ pub struct NewGame {
     pub time_stamp: f64,
 }
 
-impl Retrievable for Game {
-    fn all(conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
+impl Game {
+    pub fn all(conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
         game::table.order(game::id).load::<Game>(conn)
     }
 
-    fn find(id: i32, conn: &SqliteConnection) -> QueryResult<Game> {
+    pub fn find_by_id(id: i32, conn: &SqliteConnection) -> QueryResult<Game> {
         game::table.find(id).get_result::<Game>(conn)
     }
 
-    fn update(game: Game, conn: &SqliteConnection) -> QueryResult<Game> {
+    pub fn update(game: Game, conn: &SqliteConnection) -> QueryResult<Game> {
         diesel::update(game::table.find(game.id))
             .set(&game)
             .execute(conn)
             .and_then(|_| game::table.find(game.id).get_result::<Game>(conn))
     }
 
-    fn delete(id: i32, conn: &SqliteConnection) -> bool {
+    pub fn delete_by_id(id: i32, conn: &SqliteConnection) -> bool {
         diesel::delete(game::table.find(id)).execute(conn).is_ok()
     }
-}
 
-impl Insertable for NewGame {
-    type T = Game;
-
-    fn insert(game: NewGame, conn: &SqliteConnection) -> QueryResult<Game> {
-        // Diesel doesn't expose a get result method
-        diesel::insert_into(game::table)
-            .values(&game)
-            .execute(conn)
-            .and_then(|_| game::table.order(game::id.desc()).first(conn))
+    pub fn delete(&self, conn: &SqliteConnection) -> bool {
+        diesel::delete(self).execute(conn).is_ok()
     }
-}
 
-impl Game {
-    pub fn find_all_after(_game: &Game, conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
+    pub fn all_after(self, conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
         game::table
-            .filter(game::id.gt(_game.id))
+            .filter(game::id.gt(self.id))
             .order(game::id)
             .load::<Game>(conn)
     }
@@ -78,5 +67,13 @@ impl NewGame {
         };
 
         NewGame { time_stamp: millis }
+    }
+
+    pub fn insert(game: NewGame, conn: &SqliteConnection) -> QueryResult<Game> {
+        // Diesel doesn't expose a get result method
+        diesel::insert_into(game::table)
+            .values(&game)
+            .execute(conn)
+            .and_then(|_| game::table.order(game::id.desc()).first(conn))
     }
 }

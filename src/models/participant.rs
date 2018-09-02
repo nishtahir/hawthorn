@@ -2,8 +2,6 @@ use diesel;
 use diesel::prelude::*;
 use models::deck::Deck;
 use models::game::Game;
-use models::Retrievable;
-use schema::deck;
 use schema::game;
 use schema::participant;
 
@@ -72,7 +70,7 @@ impl Participant {
         deck_id: i32,
         conn: &SqliteConnection,
     ) -> QueryResult<Participant> {
-        let deck = Deck::find(deck_id, conn)?;
+        let deck = Deck::find_by_id(deck_id, conn)?;
         Participant::find_latest_by_deck(&deck, conn)
     }
 
