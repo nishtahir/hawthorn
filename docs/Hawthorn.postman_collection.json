@@ -1,0 +1,268 @@
+{
+	"info": {
+		"_postman_id": "f35ec3cc-90d7-49c9-a951-6b2af986a727",
+		"name": "Hawthorn",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET Decks",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/decks",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Games",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/games",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"games"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Players",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/players",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"players"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e4bfff0f-e56c-45bb-92ba-467a1ef486ed",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"token\", jsonData.token);"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"max@willowtreeapps.com\",\n  \"password\": \"dulsione\"\n}"
+				},
+				"url": {
+					"raw": "{{hostname}}/auth/login",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE Game",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/games/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"games",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "12"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE Player",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/players/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"players",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Deck",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/decks/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Player",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/players/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"players",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Game",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{hostname}}/games/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"games",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
