@@ -4,7 +4,6 @@ use api::game::DEFAULT_ELO;
 use db::DbConn;
 use models::deck::{Deck, NewDeck};
 use models::participant::Participant;
-use models::{Insertable, Retrievable};
 use rocket::request;
 use rocket::request::FromFormValue;
 use rocket_contrib::Json;
@@ -43,6 +42,18 @@ pub struct DeckResponse {
 #[derive(Deserialize, Debug)]
 struct PodReqestParam {
     players: Vec<i32>,
+}
+
+impl Deck {
+    fn update_from(self, req: UpdateDeckRequest) -> Deck {
+        Deck {
+            id: self.id,
+            alias: req.alias.unwrap_or(self.alias),
+            commander: req.commander.unwrap_or(self.commander),
+            player_id: self.player_id,
+            active: req.active.unwrap_or(self.active),
+        }
+    }
 }
 
 ///
@@ -120,7 +131,7 @@ fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, 
 
 #[get("/<id>")]
 fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse>, ApiError> {
-    let deck = Deck::find(id, &conn)?;
+    let deck = Deck::find_by_id(id, &conn)?;
     let participations = Participant::find_by_deck(&deck, &conn)?;
     let response = DeckResponse::new(deck, participations);
     Ok(Json(response))
@@ -164,7 +175,7 @@ fn get_pods(
 ) -> Result<Json<Vec<DeckResponse>>, ApiError> {
     let mut response = vec![];
     for id in params.players {
-        let deck = Deck::find(id, &conn)?;
+        let deck = Deck::find_by_id(id, &conn)?;
         let participations = Participant::find_by_deck(&deck, &conn)?;
         response.push(DeckResponse::new(deck, participations))
     }
@@ -203,29 +214,19 @@ fn create_deck(
     Ok(Json(response))
 }
 
-#[put("/", format = "application/json", data = "<req>")]
+#[put("/", format = "application/json", data = "<json>")]
 fn update_deck(
-    req: Json<UpdateDeckRequest>,
+    json: Json<UpdateDeckRequest>,
     conn: DbConn,
     _token: ApiToken,
 ) -> Result<Json<DeckResponse>, ApiError> {
-    let update_deck_request = req.into_inner();
+    let req = json.into_inner();
+    let current_deck = Deck::find_by_id(req.id, &conn)?;
+    let updated_deck = Deck::update(current_deck.update_from(req), &conn)?;
 
-    let current_deck = Deck::find(update_deck_request.id, &conn)?;
-    let new_deck = Deck {
-        id: current_deck.id,
-        alias: update_deck_request.alias.unwrap_or(current_deck.alias),
-        commander: update_deck_request
-            .commander
-            .unwrap_or(current_deck.commander),
-        player_id: current_deck.player_id,
-        active: update_deck_request.active.unwrap_or(current_deck.active),
-    };
+    let participations = Participant::find_by_deck(&updated_deck, &conn)?;
 
-    let deck = Deck::update(new_deck, &conn)?;
-    let participations = Participant::find_by_deck(&deck, &conn)?;
-    let response = DeckResponse::new(deck, participations);
-
+    let response = DeckResponse::new(updated_deck, participations);
     Ok(Json(response))
 }
 

@@ -4,8 +4,6 @@ use api::error::ApiError;
 use db::DbConn;
 use models::game::{Game, NewGame};
 use models::participant::{NewParticipant, Participant};
-
-use models::{Insertable, Retrievable};
 use rocket_contrib::Json;
 
 pub const DEFAULT_ELO: f64 = 1000.0;
@@ -39,7 +37,6 @@ struct GameRequest {
 #[derive(Deserialize)]
 struct EditGameRequest {
     id: i32,
-    timestamp: Option<i32>,
     participants: Vec<ParticipantRequest>,
 }
 
@@ -64,7 +61,7 @@ fn get_games(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<GameResponse>>, 
 
 #[get("/<id>")]
 fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameDetailResponse>, ApiError> {
-    let game = Game::find(id, &conn)?;
+    let game = Game::find_by_id(id, &conn)?;
     let participants = Participant::find_by_game(&game, &conn)?;
     let participant_response = participants
         .into_iter()
@@ -146,13 +143,12 @@ fn delete_game(
     conn: DbConn,
     _token: ApiToken,
 ) -> Result<Json<Vec<GameResponse>>, ApiError> {
-    let game = Game::find(id, &conn)?;
+    let game = Game::find_by_id(id, &conn)?;
     let participants = Participant::find_by_game(&game, &conn)?;
 
-    Game::delete(id, &conn);
     Participant::delete_all(participants, &conn);
-
-    refresh_elo_after(&game, &conn);
+    let _ = game.delete(&conn);
+    let _ = refresh_elo_after(game, &conn)?;
 
     get_games(conn, _token)
 }
@@ -164,7 +160,7 @@ fn update_game(
     _token: ApiToken,
 ) -> Result<Json<GameDetailResponse>, ApiError> {
     let request = req.into_inner();
-    let game = Game::find(request.id, &conn)?;
+    let game = Game::find_by_id(request.id, &conn)?;
 
     let mut new_participants = vec![];
     for p in request.participants {
@@ -187,14 +183,13 @@ fn update_game(
     let _ = NewParticipant::insert(&new_participants, &conn);
 
     let previous_game = game.find_previous(&conn).unwrap_or(game);
-
-    let _ = refresh_elo_after(&previous_game, &conn)?;
+    let _ = refresh_elo_after(previous_game, &conn)?;
 
     get_game(request.id, conn, _token)
 }
 
-fn refresh_elo_after(game: &Game, conn: &DbConn) -> Result<(), ApiError> {
-    let next_games = Game::find_all_after(&game, &conn)?;
+fn refresh_elo_after(game: Game, conn: &DbConn) -> Result<(), ApiError> {
+    let next_games = game.all_after(&conn)?;
     for g in next_games {
         let parts_with_previous_elo = Participant::find_by_game(&g, &conn)?
             .into_iter()

@@ -108,7 +108,7 @@ pub fn change_password(req: Json<ChangePasswordRequest>, conn: DbConn) -> Result
     if old_pass_is_valid {
         let new_hash = hash(&change_password_req.new_password, /*cost*/ 8)?;
         let _ = player.update_password(new_hash, &conn);
-        Ok({})
+        Ok({}) // just respond with 200 OK
     } else {
         Err(ApiError::Unauthorized)
     }
