@@ -5,4 +5,5 @@ pub mod game;
 pub mod index;
 pub mod player;
 
+mod common;
 mod elo;

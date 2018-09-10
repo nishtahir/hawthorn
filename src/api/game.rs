@@ -1,4 +1,5 @@
 use api::auth::ApiToken;
+use api::common::PaginatedResponse;
 use api::elo::Elo;
 use api::error::ApiError;
 use db::DbConn;
@@ -7,26 +8,8 @@ use models::participant::{NewParticipant, Participant};
 use rocket_contrib::Json;
 
 pub const DEFAULT_ELO: f64 = 1000.0;
-
-#[derive(Serialize)]
-struct GameResponse {
-    pub id: i32,
-    pub time_stamp: f64,
-}
-
-#[derive(Serialize)]
-struct GameDetailResponse {
-    pub id: i32,
-    pub time_stamp: f64,
-    pub participants: Vec<ParticipantResponse>,
-}
-
-#[derive(Serialize)]
-struct ParticipantResponse {
-    deck_id: i32,
-    elo: f64,
-    previous_elo: f64,
-}
+pub const DEFAULT_LIMIT: i32 = 25;
+pub const DEFAULT_OFFSET: i32 = 0;
 
 #[derive(Deserialize)]
 struct GameRequest {
@@ -40,42 +23,105 @@ struct EditGameRequest {
     participants: Vec<ParticipantRequest>,
 }
 
+#[derive(FromForm, Debug)]
+struct GameRequestParams {
+    limit: Option<i32>,
+    offset: Option<i32>,
+}
+
+#[derive(Serialize)]
+struct GameResponse {
+    pub id: i32,
+    pub time_stamp: f64,
+    pub participants: Vec<ParticipantResponse>,
+}
+
 #[derive(Deserialize)]
 struct ParticipantRequest {
     pub deck_id: i32,
     pub win: bool,
 }
 
-#[get("/")]
-fn get_games(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<GameResponse>>, ApiError> {
-    let games = Game::all(&conn)?;
-    let response = games
-        .into_iter()
-        .map(|game| GameResponse {
+#[derive(Serialize)]
+struct ParticipantResponse {
+    deck_id: i32,
+    elo: f64,
+    previous_elo: f64,
+}
+
+#[get("/?<params>")]
+fn get_games_paginated(
+    params: GameRequestParams,
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
+    let limit = params.limit.unwrap_or(DEFAULT_LIMIT);
+    let offset = params.offset.unwrap_or(DEFAULT_OFFSET);
+
+    let mut response = vec![];
+    for game in Game::all(limit, offset, &conn)? {
+        let participants = Participant::find_by_game(&game, &conn)?;
+        let participant_response = participants
+            .into_iter()
+            .map(|participant| {
+                let previous_elo = participant
+                    .find_previous(&conn)
+                    .ok()
+                    .map_or(DEFAULT_ELO, |p| p.elo);
+                ParticipantResponse {
+                    deck_id: participant.deck_id,
+                    elo: participant.elo,
+                    previous_elo: previous_elo,
+                }
+            })
+            .collect();
+
+        response.push(GameResponse {
             id: game.id,
             time_stamp: game.time_stamp,
-        })
-        .collect();
-    Ok(Json(response))
+            participants: participant_response,
+        });
+    }
+
+    Ok(Json(PaginatedResponse {
+        limit,
+        offset,
+        data: response,
+    }))
+}
+
+#[get("/")]
+fn get_games(
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
+    let default_params = GameRequestParams {
+        limit: None,
+        offset: None,
+    };
+    get_games_paginated(default_params, conn, _token)
 }
 
 #[get("/<id>")]
-fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameDetailResponse>, ApiError> {
+fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameResponse>, ApiError> {
     let game = Game::find_by_id(id, &conn)?;
     let participants = Participant::find_by_game(&game, &conn)?;
     let participant_response = participants
         .into_iter()
-        .map(|p| {
-            let previous_elo = p.find_previous(&conn).ok().map_or(DEFAULT_ELO, |p| p.elo);
+        .map(|participant| {
+            let previous_elo = participant
+                .find_previous(&conn)
+                .ok()
+                .map_or(DEFAULT_ELO, |p| p.elo);
             ParticipantResponse {
-                deck_id: p.deck_id,
-                elo: p.elo,
+                deck_id: participant.deck_id,
+                elo: participant.elo,
                 previous_elo: previous_elo,
             }
         })
         .collect();
 
-    let response = GameDetailResponse {
+    let response = GameResponse {
         id: game.id,
         time_stamp: game.time_stamp,
         participants: participant_response,
@@ -89,7 +135,7 @@ fn create_game(
     req: Json<GameRequest>,
     conn: DbConn,
     _token: ApiToken,
-) -> Result<Json<GameDetailResponse>, ApiError> {
+) -> Result<Json<GameResponse>, ApiError> {
     let game_request = req.into_inner();
     let new_game = NewGame::insert(NewGame::new(&game_request.timestamp), &conn)?;
 
@@ -128,7 +174,7 @@ fn create_game(
         })
         .collect();
 
-    let response = GameDetailResponse {
+    let response = GameResponse {
         id: new_game.id,
         time_stamp: new_game.time_stamp,
         participants: rankings,
@@ -142,7 +188,7 @@ fn delete_game(
     id: i32,
     conn: DbConn,
     _token: ApiToken,
-) -> Result<Json<Vec<GameResponse>>, ApiError> {
+) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
     let game = Game::find_by_id(id, &conn)?;
     let participants = Participant::find_by_game(&game, &conn)?;
 
@@ -158,7 +204,7 @@ fn update_game(
     req: Json<EditGameRequest>,
     conn: DbConn,
     _token: ApiToken,
-) -> Result<Json<GameDetailResponse>, ApiError> {
+) -> Result<Json<GameResponse>, ApiError> {
     let request = req.into_inner();
     let game = Game::find_by_id(request.id, &conn)?;
 
@@ -167,7 +213,7 @@ fn update_game(
         let latest_elo_before_game = Participant::latest_by_deck_id_before_game(
             p.deck_id, &game, &conn,
         ).map(|p| p.elo)
-            .unwrap_or(1000.0);
+            .unwrap_or(DEFAULT_ELO);
 
         let new_p = NewParticipant {
             game_id: game.id,

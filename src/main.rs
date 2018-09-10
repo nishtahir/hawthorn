@@ -78,7 +78,14 @@ fn setup_routes(pool: SqlitePool) {
         )
         .mount(
             "/games",
-            routes![get_games, get_game, create_game, delete_game, update_game],
+            routes![
+                get_games_paginated,
+                get_games,
+                get_game,
+                create_game,
+                delete_game,
+                update_game
+            ],
         )
         .catch(catchers![handle_404, handle_401, handle_400,])
         .launch();
