@@ -59,13 +59,11 @@ fn main() {
 }
 
 fn setup_routes(pool: SqlitePool) {
-    // You can also deserialize this
     let options = rocket_cors::Cors {
         allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Delete]
             .into_iter()
             .map(From::from)
             .collect(),
-        allow_credentials: true,
         ..Default::default()
     };
 
