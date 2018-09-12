@@ -17,6 +17,7 @@ extern crate log4rs;
 extern crate rand;
 extern crate rocket;
 extern crate rocket_contrib;
+extern crate rocket_cors;
 #[macro_use]
 extern crate serde_derive;
 extern crate time;
@@ -33,6 +34,7 @@ use api::game::*;
 use api::player::*;
 use db::SqlitePool;
 use dotenv::dotenv;
+use rocket::http::Method;
 use std::env;
 
 embed_migrations!("./migrations/");
@@ -57,6 +59,16 @@ fn main() {
 }
 
 fn setup_routes(pool: SqlitePool) {
+    // You can also deserialize this
+    let options = rocket_cors::Cors {
+        allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Delete]
+            .into_iter()
+            .map(From::from)
+            .collect(),
+        allow_credentials: true,
+        ..Default::default()
+    };
+
     rocket::ignite()
         .manage(pool)
         .mount("/", routes![api::index::index])
@@ -88,5 +100,6 @@ fn setup_routes(pool: SqlitePool) {
             ],
         )
         .catch(catchers![handle_404, handle_401, handle_400,])
+        .attach(options)
         .launch();
 }
