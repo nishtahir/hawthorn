@@ -1,33 +1,10 @@
 {
 	"info": {
-		"_postman_id": "f35ec3cc-90d7-49c9-a951-6b2af986a727",
+		"_postman_id": "a9d2998e-3546-440d-a72c-22bc8e2a1bb3",
 		"name": "Hawthorn",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
-		{
-			"name": "GET Decks",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					}
-				],
-				"body": {},
-				"url": {
-					"raw": "{{hostname}}/decks",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"decks"
-					]
-				}
-			},
-			"response": []
-		},
 		{
 			"name": "GET Games",
 			"request": {
@@ -38,7 +15,10 @@
 						"value": "{{token}}"
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{hostname}}/games",
 					"host": [
@@ -61,7 +41,10 @@
 						"value": "{{token}}"
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{hostname}}/players",
 					"host": [
@@ -124,7 +107,10 @@
 						"value": "{{token}}"
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{hostname}}/games/:id",
 					"host": [
@@ -145,36 +131,6 @@
 			"response": []
 		},
 		{
-			"name": "DELETE Player",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					}
-				],
-				"body": {},
-				"url": {
-					"raw": "{{hostname}}/players/:id",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"players",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "GET Deck",
 			"request": {
 				"method": "GET",
@@ -184,7 +140,10 @@
 						"value": "{{token}}"
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{hostname}}/decks/:id",
 					"host": [
@@ -205,6 +164,129 @@
 			"response": []
 		},
 		{
+			"name": "POST Deck",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"player_id\": 1,\n    \"alias\": \"marwyn\",\n    \"commander\": \"Marwyn, the Nurturer\"\n}"
+				},
+				"url": {
+					"raw": "{{hostname}}/decks/",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks",
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "POST Deck",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"player_id\": 1,\n    \"alias\": \"marwyn\",\n    \"commander\": \"Marwyn, the Nurturer\"\n}"
+						},
+						"url": {
+							"raw": "{{hostname}}/decks/",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"decks",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "158",
+							"name": "Content-Length",
+							"description": "The length of the response body in octets (8-bit bytes)"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 09 Sep 2018 02:59:41 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						},
+						{
+							"key": "Server",
+							"value": "Rocket",
+							"name": "Server",
+							"description": "A name for the server"
+						}
+					],
+					"cookie": [],
+					"body": "{\"id\":62,\"alias\":\"marwyn\",\"commander\":\"Marwyn, the Nurturer\",\"player_id\":1,\"active\":true,\"games\":0,\"wins\":0,\"win_percentage\":0.0,\"elo\":1000.0,\"elo_delta\":0.0}"
+				}
+			]
+		},
+		{
+			"name": "PUT Deck",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 73,\n    \"alias\": \"marwyn\",\n    \"commander\": \"Marwyn, the Nurturer\",\n    \"active\": false\n}"
+				},
+				"url": {
+					"raw": "{{hostname}}/decks",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "GET Player",
 			"request": {
 				"method": "GET",
@@ -214,7 +296,10 @@
 						"value": "{{token}}"
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{hostname}}/players/:id",
 					"host": [
@@ -244,7 +329,10 @@
 						"value": "{{token}}"
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "{{hostname}}/games/:id",
 					"host": [

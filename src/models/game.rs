@@ -18,8 +18,16 @@ pub struct NewGame {
 }
 
 impl Game {
-    pub fn all(conn: &SqliteConnection) -> QueryResult<Vec<Game>> {
-        game::table.order(game::id).load::<Game>(conn)
+    pub fn all<T: Into<i32>>(
+        limit: T,
+        offset: T,
+        conn: &SqliteConnection,
+    ) -> QueryResult<Vec<Game>> {
+        game::table
+            .order(game::id.desc())
+            .limit(limit.into() as i64)
+            .offset(offset.into() as i64)
+            .load::<Game>(conn)
     }
 
     pub fn find_by_id(id: i32, conn: &SqliteConnection) -> QueryResult<Game> {

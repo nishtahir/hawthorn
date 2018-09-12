@@ -144,12 +144,12 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
     let time_four_weeks_ago = current_time() - 2419200.0; /*four weeks*/
     let mut leaderboard = query_result
         .into_iter()
-        .filter(|(_, participations)| {
+        .filter(|(deck, participations)| {
             let max_time = participations
                 .iter()
                 .map(|(_, g)| g.time_stamp)
                 .fold(0.0, f64::max);
-            participations.len() >= 5 && max_time > time_four_weeks_ago
+            deck.active && participations.len() >= 5 && max_time > time_four_weeks_ago
         })
         .map(|(deck, participations)| {
             let (parts, _): (Vec<_>, Vec<_>) = participations.into_iter().unzip();
