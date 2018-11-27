@@ -58,10 +58,10 @@ pub fn get_games(
 ) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
     let limit = params.limit.unwrap_or(DEFAULT_LIMIT);
     let offset = params.offset.unwrap_or(DEFAULT_OFFSET);
-    _get_games(limit, offset, conn)
+    fetch_games(limit, offset, conn)
 }
 
-fn _get_games(
+fn fetch_games(
     limit: i32,
     offset: i32,
     conn: DbConn,
@@ -192,7 +192,7 @@ pub fn delete_game(
     let _ = game.delete(&conn);
     let _ = refresh_elo_after(game, &conn)?;
 
-    _get_games(DEFAULT_LIMIT, DEFAULT_OFFSET, conn)
+    fetch_games(DEFAULT_LIMIT, DEFAULT_OFFSET, conn)
 }
 
 #[put("/", format = "application/json", data = "<req>")]

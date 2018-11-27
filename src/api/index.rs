@@ -1,6 +1,6 @@
 use api::error::ApiError;
-use rand;
-use rand::Rng;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use rocket_contrib::json::Json;
 
 const QUOTES: &'static [&'static str] = &[
@@ -29,6 +29,6 @@ pub struct IndexResponse {
 
 #[get("/")]
 pub fn index() -> Result<Json<IndexResponse>, ApiError> {
-    let quote = rand::thread_rng().choose(&QUOTES).map_or("", |&s| s);
+    let quote = &QUOTES.choose(&mut thread_rng()).map_or("", |&s| s);
     Ok(Json(IndexResponse { quote: quote }))
 }
