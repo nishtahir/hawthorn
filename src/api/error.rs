@@ -5,7 +5,7 @@ use rocket::http::ContentType;
 use rocket::http::Status;
 use rocket::request::Request;
 use rocket::response::{Responder, Response};
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use std::convert::From;
 
 #[derive(Debug)]

@@ -163,17 +163,17 @@ mod tests {
 
     #[test]
     fn test_elo_rating() {
-        assert_eq!{
+        assert_eq! {
             elo_rating(1000.0, GameOutcome::WIN, expected_score(1000.0, 1000.0)),
             1020.0
         }
 
-        assert_eq!{
+        assert_eq! {
             elo_rating(1000.0, GameOutcome::LOSE, expected_score(1000.0, 1000.0)),
             980.0
         }
 
-        assert_eq!{
+        assert_eq! {
             elo_rating(1000.0, GameOutcome::DRAW, expected_score(1000.0, 1000.0)),
             1000.0
         }

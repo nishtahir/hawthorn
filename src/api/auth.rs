@@ -9,7 +9,7 @@ use models::player::Player;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use rocket::Outcome;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use std::env;
 use time;
 

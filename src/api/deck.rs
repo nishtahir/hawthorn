@@ -4,21 +4,19 @@ use api::game::DEFAULT_ELO;
 use db::DbConn;
 use models::deck::{Deck, NewDeck};
 use models::participant::Participant;
-use rocket::request;
-use rocket::request::FromFormValue;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 use std::cmp::Ordering;
 use time;
 
 #[derive(Deserialize)]
-struct DeckRequest {
+pub struct DeckRequest {
     player_id: i32,
     alias: String,
     commander: String,
 }
 
 #[derive(Deserialize)]
-struct UpdateDeckRequest {
+pub struct UpdateDeckRequest {
     id: i32,
     alias: Option<String>,
     commander: Option<String>,
@@ -39,11 +37,6 @@ pub struct DeckResponse {
     elo_delta: f64,
 }
 
-#[derive(Deserialize, Debug)]
-struct PodReqestParam {
-    players: Vec<i32>,
-}
-
 impl Deck {
     fn update_from(self, req: UpdateDeckRequest) -> Deck {
         Deck {
@@ -53,28 +46,6 @@ impl Deck {
             player_id: self.player_id,
             active: req.active.unwrap_or(self.active),
         }
-    }
-}
-
-///
-/// We need this in order to have a variable number of player_id parameters
-/// in the request. This looks through the request parameters and populates
-/// a Vec with matching keys
-///
-impl<'f> request::FromForm<'f> for PodReqestParam {
-    type Error = ApiError;
-
-    fn from_form(form_items: &mut request::FormItems<'f>, _: bool) -> Result<Self, Self::Error> {
-        let mut req = PodReqestParam { players: vec![] };
-        for (k, v) in form_items {
-            let key: &str = &*k;
-            let value = i32::from_form_value(v).map_err(|_| ApiError::BadRequest)?;
-            match key {
-                "player_id" => req.players.push(value),
-                _ => return Err(ApiError::BadRequest),
-            }
-        }
-        Ok(req)
     }
 }
 
@@ -118,7 +89,7 @@ impl DeckResponse {
 }
 
 #[get("/")]
-fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, ApiError> {
+pub fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, ApiError> {
     let decks = Deck::all(&conn)?;
     let participants = Participant::all_grouped_by_deck(decks, &conn)?;
 
@@ -130,7 +101,7 @@ fn get_decks(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, 
 }
 
 #[get("/<id>")]
-fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse>, ApiError> {
+pub fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse>, ApiError> {
     let deck = Deck::find_by_id(id, &conn)?;
     let participations = Participant::find_by_deck(&deck, &conn)?;
     let response = DeckResponse::new(deck, participations);
@@ -138,7 +109,10 @@ fn get_deck(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<DeckResponse
 }
 
 #[get("/leaderboard")]
-fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckResponse>>, ApiError> {
+pub fn get_leaderboard(
+    conn: DbConn,
+    _token: ApiToken,
+) -> Result<Json<Vec<DeckResponse>>, ApiError> {
     let decks = Deck::all(&conn)?;
     let query_result = Participant::all_by_deck_join_game(decks, &conn)?;
     let time_four_weeks_ago = current_time() - 2419200.0; /*four weeks*/
@@ -167,23 +141,8 @@ fn get_leaderboard(conn: DbConn, _token: ApiToken) -> Result<Json<Vec<DeckRespon
     Ok(Json(response))
 }
 
-#[get("/pods?<params>")]
-fn get_pods(
-    params: PodReqestParam,
-    conn: DbConn,
-    _token: ApiToken,
-) -> Result<Json<Vec<DeckResponse>>, ApiError> {
-    let mut response = vec![];
-    for id in params.players {
-        let deck = Deck::find_by_id(id, &conn)?;
-        let participations = Participant::find_by_deck(&deck, &conn)?;
-        response.push(DeckResponse::new(deck, participations))
-    }
-    Ok(Json(response))
-}
-
 #[post("/", format = "application/json", data = "<req>")]
-fn create_deck(
+pub fn create_deck(
     req: Json<DeckRequest>,
     conn: DbConn,
     _token: ApiToken,
@@ -215,7 +174,7 @@ fn create_deck(
 }
 
 #[put("/", format = "application/json", data = "<json>")]
-fn update_deck(
+pub fn update_deck(
     json: Json<UpdateDeckRequest>,
     conn: DbConn,
     _token: ApiToken,
