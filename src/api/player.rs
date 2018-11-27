@@ -5,7 +5,7 @@ use bcrypt::hash;
 use db::DbConn;
 use models::deck::Deck;
 use models::player::{NewPlayer, Player};
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 
 #[derive(Deserialize)]
 pub struct CreatePlayerRequest {
@@ -65,7 +65,7 @@ pub fn create_player(
 }
 
 #[get("/")]
-fn get_players(
+pub fn get_players(
     conn: DbConn,
     _token: ApiToken,
 ) -> Result<Json<Vec<PlayerDetailResponse>>, ApiError> {

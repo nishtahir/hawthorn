@@ -5,59 +5,67 @@ use api::error::ApiError;
 use db::DbConn;
 use models::game::{Game, NewGame};
 use models::participant::{NewParticipant, Participant};
-use rocket_contrib::Json;
+use rocket::request::Form;
+use rocket_contrib::json::Json;
 
 pub const DEFAULT_ELO: f64 = 1000.0;
 pub const DEFAULT_LIMIT: i32 = 25;
 pub const DEFAULT_OFFSET: i32 = 0;
 
 #[derive(Deserialize)]
-struct GameRequest {
+pub struct GameRequest {
     timestamp: Option<i32>,
     participants: Vec<ParticipantRequest>,
 }
 
 #[derive(Deserialize)]
-struct EditGameRequest {
+pub struct EditGameRequest {
     id: i32,
     participants: Vec<ParticipantRequest>,
 }
 
 #[derive(FromForm, Debug)]
-struct GameRequestParams {
+pub struct GameRequestParams {
     limit: Option<i32>,
     offset: Option<i32>,
 }
 
 #[derive(Serialize)]
-struct GameResponse {
+pub struct GameResponse {
     pub id: i32,
     pub time_stamp: f64,
     pub participants: Vec<ParticipantResponse>,
 }
 
 #[derive(Deserialize)]
-struct ParticipantRequest {
+pub struct ParticipantRequest {
     pub deck_id: i32,
     pub win: bool,
 }
 
 #[derive(Serialize)]
-struct ParticipantResponse {
+pub struct ParticipantResponse {
     deck_id: i32,
     elo: f64,
     previous_elo: f64,
 }
 
-#[get("/?<params>")]
-fn get_games_paginated(
-    params: GameRequestParams,
+#[get("/?<params..>")]
+pub fn get_games(
+    params: Form<GameRequestParams>,
     conn: DbConn,
     _token: ApiToken,
 ) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
     let limit = params.limit.unwrap_or(DEFAULT_LIMIT);
     let offset = params.offset.unwrap_or(DEFAULT_OFFSET);
+    _get_games(limit, offset, conn)
+}
 
+fn _get_games(
+    limit: i32,
+    offset: i32,
+    conn: DbConn,
+) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
     let mut response = vec![];
     for game in Game::all(limit, offset, &conn)? {
         let participants = Participant::find_by_game(&game, &conn)?;
@@ -90,20 +98,8 @@ fn get_games_paginated(
     }))
 }
 
-#[get("/")]
-fn get_games(
-    conn: DbConn,
-    _token: ApiToken,
-) -> Result<Json<PaginatedResponse<GameResponse>>, ApiError> {
-    let default_params = GameRequestParams {
-        limit: None,
-        offset: None,
-    };
-    get_games_paginated(default_params, conn, _token)
-}
-
 #[get("/<id>")]
-fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameResponse>, ApiError> {
+pub fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameResponse>, ApiError> {
     let game = Game::find_by_id(id, &conn)?;
     let participants = Participant::find_by_game(&game, &conn)?;
     let participant_response = participants
@@ -131,7 +127,7 @@ fn get_game(id: i32, conn: DbConn, _token: ApiToken) -> Result<Json<GameResponse
 }
 
 #[post("/", format = "application/json", data = "<req>")]
-fn create_game(
+pub fn create_game(
     req: Json<GameRequest>,
     conn: DbConn,
     _token: ApiToken,
@@ -184,7 +180,7 @@ fn create_game(
 }
 
 #[delete("/<id>")]
-fn delete_game(
+pub fn delete_game(
     id: i32,
     conn: DbConn,
     _token: ApiToken,
@@ -196,11 +192,11 @@ fn delete_game(
     let _ = game.delete(&conn);
     let _ = refresh_elo_after(game, &conn)?;
 
-    get_games(conn, _token)
+    _get_games(DEFAULT_LIMIT, DEFAULT_OFFSET, conn)
 }
 
 #[put("/", format = "application/json", data = "<req>")]
-fn update_game(
+pub fn update_game(
     req: Json<EditGameRequest>,
     conn: DbConn,
     _token: ApiToken,
@@ -210,10 +206,10 @@ fn update_game(
 
     let mut new_participants = vec![];
     for p in request.participants {
-        let latest_elo_before_game = Participant::latest_by_deck_id_before_game(
-            p.deck_id, &game, &conn,
-        ).map(|p| p.elo)
-            .unwrap_or(DEFAULT_ELO);
+        let latest_elo_before_game =
+            Participant::latest_by_deck_id_before_game(p.deck_id, &game, &conn)
+                .map(|p| p.elo)
+                .unwrap_or(DEFAULT_ELO);
 
         let new_p = NewParticipant {
             game_id: game.id,

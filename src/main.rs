@@ -1,26 +1,33 @@
-#![feature(plugin, custom_attribute, custom_derive)]
-#![plugin(rocket_codegen)]
+#![feature(
+    plugin,
+    custom_attribute,
+    custom_derive,
+    proc_macro_hygiene,
+    decl_macro
+)]
 #![allow(proc_macro_derive_resolution_fallback)] // This can be removed after diesel-1.4
 
 extern crate bcrypt;
+extern crate dotenv;
+extern crate jsonwebtoken;
+extern crate log4rs;
+extern crate rand;
+extern crate rocket_contrib;
+extern crate rocket_cors;
+extern crate time;
+
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-extern crate dotenv;
-extern crate jsonwebtoken;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate log4rs;
-extern crate rand;
+#[macro_use]
 extern crate rocket;
-extern crate rocket_contrib;
-extern crate rocket_cors;
 #[macro_use]
 extern crate serde_derive;
-extern crate time;
 
 mod api;
 mod db;
@@ -82,22 +89,14 @@ fn setup_routes(pool: SqlitePool) {
                 get_deck,
                 create_deck,
                 update_deck,
-                get_leaderboard,
-                get_pods
+                get_leaderboard
             ],
         )
         .mount(
             "/games",
-            routes![
-                get_games_paginated,
-                get_games,
-                get_game,
-                create_game,
-                delete_game,
-                update_game
-            ],
+            routes![get_games, get_game, create_game, delete_game, update_game],
         )
-        .catch(catchers![handle_404, handle_401, handle_400,])
+        .register(catchers![handle_404, handle_401, handle_400,])
         .attach(options)
         .launch();
 }
