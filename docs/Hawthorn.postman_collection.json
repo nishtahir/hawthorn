@@ -6,7 +6,7 @@
 	},
 	"item": [
 		{
-			"name": "GET Games",
+			"name": "GET Game",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -20,12 +20,181 @@
 					"raw": ""
 				},
 				"url": {
+					"raw": "{{hostname}}/games/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"games",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT Game",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 421,\n    \"participants\": [\n        {\n            \"deck_id\": 74,\n            \"win\": true\n        },\n        {\n            \"deck_id\": 82,\n            \"win\": false\n        },\n        {\n            \"deck_id\": 80,\n            \"win\": false\n        },\n        {\n            \"deck_id\": 79,\n\t\t\t\"win\": false\n        }\n    ]\n}"
+				},
+				"url": {
 					"raw": "{{hostname}}/games",
 					"host": [
 						"{{hostname}}"
 					],
 					"path": [
 						"games"
+					]
+				},
+				"description": "Update game"
+			},
+			"response": []
+		},
+		{
+			"name": "GET Games",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{hostname}}/games",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"games"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "GET Games",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{token}}",
+								"disabled": false
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{hostname}}/games?limit=5&offset=10",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"games"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5"
+								},
+								{
+									"key": "offset",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "1305",
+							"name": "Content-Length",
+							"description": "The length of the response body in octets (8-bit bytes)"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 10 Sep 2018 19:21:45 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						},
+						{
+							"key": "Server",
+							"value": "Rocket",
+							"name": "Server",
+							"description": "A name for the server"
+						}
+					],
+					"cookie": [],
+					"body": "{\"limit\":5,\"offset\":10,\"data\":[{\"id\":282,\"time_stamp\":1534737600.0,\"participants\":[{\"deck_id\":33,\"elo\":908.5054481291636,\"previous_elo\":931.294275509974},{\"deck_id\":37,\"elo\":929.3390677144925,\"previous_elo\":882.5296681594201},{\"deck_id\":55,\"elo\":929.3179454480179,\"previous_elo\":953.3385176222798}]},{\"id\":281,\"time_stamp\":1534737600.0,\"participants\":[{\"deck_id\":23,\"elo\":842.9770211604714,\"previous_elo\":859.8760821550286},{\"deck_id\":33,\"elo\":931.294275509974,\"previous_elo\":953.5508260036756},{\"deck_id\":55,\"elo\":953.3385176222798,\"previous_elo\":914.182906134021}]},{\"id\":280,\"time_stamp\":1534737600.0,\"participants\":[{\"deck_id\":50,\"elo\":1008.545667797263,\"previous_elo\":987.8463316375232},{\"deck_id\":61,\"elo\":979.3006638402602,\"previous_elo\":1000.0}]},{\"id\":279,\"time_stamp\":1534737600.0,\"participants\":[{\"deck_id\":9,\"elo\":1239.1307094418092,\"previous_elo\":1257.3081146984594},{\"deck_id\":29,\"elo\":1317.575426143367,\"previous_elo\":1289.0579138805923},{\"deck_id\":58,\"elo\":1095.6599881872492,\"previous_elo\":1106.0000951933737}]},{\"id\":278,\"time_stamp\":1534737600.0,\"participants\":[{\"deck_id\":9,\"elo\":1257.3081146984594,\"previous_elo\":1217.2800839274265},{\"deck_id\":29,\"elo\":1289.0579138805923,\"previous_elo\":1314.5134248878242},{\"deck_id\":58,\"elo\":1106.0000951933737,\"previous_elo\":1120.5726149571747}]}]}"
+				}
+			]
+		},
+		{
+			"name": "DELETE Game",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{hostname}}/games/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"games",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "12"
+						}
 					]
 				}
 			},
@@ -52,6 +221,237 @@
 					],
 					"path": [
 						"players"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Player",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{hostname}}/players/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"players",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Player",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"alias\": \"trisha\",\n\t\"email\": \"trisha.fuentes@willowtreeapps.com\",\n\t\"password\": \"Pass123!\"\n}"
+				},
+				"url": {
+					"raw": "{{hostname}}/players",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"players"
+					]
+				},
+				"description": "Add a player"
+			},
+			"response": [
+				{
+					"name": "POST Players",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{token}}",
+								"disabled": false
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"disabled": false
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"alias\": \"sample\",\n\t\"email\": \"sample@sample.com\",\n\t\"password\": \"sample\"\n}"
+						},
+						"url": {
+							"raw": "{{hostname}}/players",
+							"host": [
+								"{{hostname}}"
+							],
+							"path": [
+								"players"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Connection",
+							"value": "Keep-Alive",
+							"name": "Connection",
+							"description": "Options that are desired for the connection"
+						},
+						{
+							"key": "Content-Length",
+							"value": "26",
+							"name": "Content-Length",
+							"description": "The length of the response body in octets (8-bit bytes)"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 25 Sep 2018 14:37:44 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=5, max=100",
+							"name": "Keep-Alive",
+							"description": "Custom header"
+						},
+						{
+							"key": "Server",
+							"value": "Rocket",
+							"name": "Server",
+							"description": "A name for the server"
+						}
+					],
+					"cookie": [],
+					"body": "{\"id\":18,\"alias\":\"trisha\"}"
+				}
+			]
+		},
+		{
+			"name": "GET Deck",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{hostname}}/decks/:id",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Leaderboard",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{hostname}}/decks/leaderboard",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks",
+						"leaderboard"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT Deck",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 73,\n    \"alias\": \"marwyn\",\n    \"commander\": \"Marwyn, the Nurturer\",\n    \"active\": false\n}"
+				},
+				"url": {
+					"raw": "{{hostname}}/decks",
+					"host": [
+						"{{hostname}}"
+					],
+					"path": [
+						"decks"
 					]
 				}
 			},
@@ -92,72 +492,6 @@
 					"path": [
 						"auth",
 						"login"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "DELETE Game",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{hostname}}/games/:id",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"games",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": "12"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "GET Deck",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{hostname}}/decks/:id",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"decks",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": "10"
-						}
 					]
 				}
 			},
@@ -255,102 +589,6 @@
 					"body": "{\"id\":62,\"alias\":\"marwyn\",\"commander\":\"Marwyn, the Nurturer\",\"player_id\":1,\"active\":true,\"games\":0,\"wins\":0,\"win_percentage\":0.0,\"elo\":1000.0,\"elo_delta\":0.0}"
 				}
 			]
-		},
-		{
-			"name": "PUT Deck",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"id\": 73,\n    \"alias\": \"marwyn\",\n    \"commander\": \"Marwyn, the Nurturer\",\n    \"active\": false\n}"
-				},
-				"url": {
-					"raw": "{{hostname}}/decks",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"decks"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "GET Player",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{hostname}}/players/:id",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"players",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": ""
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "GET Game",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "x-api-key",
-						"value": "{{token}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{hostname}}/games/:id",
-					"host": [
-						"{{hostname}}"
-					],
-					"path": [
-						"games",
-						":id"
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": ""
-						}
-					]
-				}
-			},
-			"response": []
 		}
 	]
 }
